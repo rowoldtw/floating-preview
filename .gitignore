@@ -1,0 +1,6 @@
+# Built on install (scripts/install.sh), for this Mac.
+pip-helper
+glass.node
+# The plugin's settings and window position, per vault.
+data.json
+.DS_Store

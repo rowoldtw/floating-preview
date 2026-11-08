@@ -1,0 +1,502 @@
+/*
+ * The floating preview window (floating-preview). The window is Liquid Glass
+ * (added natively), so everything here is transparent but tints: a light
+ * one on the frame and a darker one on the page. At rest the frame is a thin border around the page; with the
+ * cursor near the top, its top grows into a bar with the page's buttons
+ * (and a close button), which drags the window.
+ */
+html.fp-root,
+html.fp-root body.fp-window .app-container,
+html.fp-root body.fp-window .horizontal-main-container,
+html.fp-root body.fp-window .workspace,
+html.fp-root body.fp-window .workspace-split,
+html.fp-root body.fp-window .workspace-tabs,
+html.fp-root body.fp-window .workspace-tab-container,
+html.fp-root body.fp-window .workspace-leaf,
+html.fp-root body.fp-window .workspace-leaf-content,
+html.fp-root body.fp-window .markdown-preview-view,
+html.fp-root body.fp-window .markdown-reading-view,
+html.fp-root body.fp-window .mod-root {
+  background: transparent !important;
+}
+.fp-window {
+  --pip-frame: 5px;
+  --pip-bar: 38px;
+  --pip-top: var(--pip-frame);
+  /* The bottom and right edges grow the same way: into the switcher and the section rail. */
+  --pip-bottom-bar: 36px;
+  --pip-rail: 19px;
+  /* Popouts are nearly solid: a CSS blur over the window's glass disturbs the glass under it. */
+  --pip-popout-bg: rgb(36 36 38 / 0.96);
+  --pip-popout-border: rgb(255 255 255 / 0.09);
+  --pip-popout-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+  --pip-bottom: var(--pip-frame);
+  --pip-right: var(--pip-frame);
+  --pip-ease: cubic-bezier(0.2, 0, 0, 1);
+  /* The window's own corners (macOS, continuous): the page's sit concentric inside them. */
+  --pip-radius: 16px;
+}
+html.fp-root body.fp-window {
+  /* A steady dark layer over the glass: less see-through, and it hides the glass's own shifts. */
+  background: rgb(44 44 46 / 0.55) !important;
+}
+.fp-window.is-near-top,
+.fp-window.is-dragging {
+  --pip-top: var(--pip-bar);
+}
+.fp-window:is(.is-near-bottom, .is-switcher-open) {
+  --pip-bottom: var(--pip-bottom-bar);
+}
+.fp-window.has-scroll:is(.is-near-right, .is-rail-open, .is-scrolling) {
+  --pip-right: var(--pip-rail);
+}
+.fp-window .workspace-leaf-content {
+  position: relative;
+}
+/* Properties: one panel, collapsed to its heading by default (floating-preview), with the page's corner radius. */
+.fp-window .metadata-container {
+  /* Rows' hover and focus outlines sit concentric inside the panel's corners. */
+  --metadata-property-radius: calc(var(--pip-radius) - var(--pip-frame) - 4px);
+  --metadata-property-radius-hover: calc(var(--pip-radius) - var(--pip-frame) - 4px);
+  --metadata-property-radius-focus: calc(var(--pip-radius) - var(--pip-frame) - 4px);
+  padding: 4px !important;
+  border-radius: calc(var(--pip-radius) - var(--pip-frame));
+  background-color: rgb(255 255 255 / 0.06) !important;
+}
+.fp-window .metadata-container .metadata-properties {
+  background-color: transparent !important;
+  /* Obsidian pulls the rows out past the panel's edges; here they stay 4px inside it, so their hover sits concentric. */
+  margin-inline: 0 !important;
+  padding-inline: 0 !important;
+}
+.fp-window .metadata-container .metadata-properties-heading {
+  display: flex !important;
+  /* With the panel's 4px, the pill's text sits 10px from its top and bottom and 14px from its sides. */
+  margin: 0 !important;
+  padding: 6px 10px !important;
+  border-radius: var(--metadata-property-radius);
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  cursor: default;
+}
+/* The theme widens the rows past the panel and shifts them left; here they stay inside it. */
+html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
+  /* While morphing, held at the open panel's width (--pip-props-width, set by floating-preview). */
+  width: var(--pip-props-width, 100%) !important;
+  transform: none !important;
+}
+/* Closed, the panel is just a pill around its title. */
+.fp-window .metadata-container.is-collapsed {
+  width: fit-content;
+  /* Obsidian's size container gives it no width of its own to fit. */
+  container-type: normal;
+}
+.fp-window .metadata-container.is-collapsed .metadata-properties-heading {
+  width: max-content !important;
+}
+
+/* While the panel morphs open or closed (floating-preview), its rows stay drawn inside it. */
+.fp-window .metadata-container.is-morphing {
+  overflow: hidden;
+}
+.fp-window .metadata-container.is-morphing {
+  container: none;
+}
+.fp-window .metadata-container.is-morphing .metadata-content {
+  display: block !important;
+  /* The rows lay out by the open panel's width (held on this) while the panel itself changes size. */
+  container: metadata / inline-size;
+}
+.fp-window .metadata-container.is-morphing .metadata-property {
+  display: flex !important;
+}
+.fp-window .view-header {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 10;
+  height: var(--pip-top) !important;
+  min-height: 0;
+  padding-block: 0 !important;
+  overflow: hidden;
+  opacity: 0;
+  cursor: grab;
+  background: transparent !important;
+  border: 0 !important;
+  transition:
+    height 220ms var(--pip-ease),
+    opacity 160ms ease-out;
+}
+.fp-window.is-near-top .view-header,
+.fp-window.is-dragging .view-header {
+  opacity: 1;
+}
+.fp-window .view-header {
+  align-items: center;
+}
+/* Compact buttons, so their hover outline sits clear of the bar's edges. */
+.fp-window .view-header .clickable-icon {
+  cursor: default;
+  height: 26px;
+  min-width: 26px;
+  padding: 4px 5px !important;
+  border-radius: 7px;
+}
+.fp-window .view-content {
+  position: absolute !important;
+  inset: var(--pip-top) var(--pip-right) var(--pip-bottom) var(--pip-frame);
+  width: auto !important;
+  height: auto !important;
+  border-radius: calc(var(--pip-radius) - var(--pip-frame));
+  overflow: hidden;
+  /* Darker than the frame, so the page reads as a panel inside it. */
+  background: rgb(0 0 0 / 0.3) !important;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+  transition:
+    top 220ms var(--pip-ease),
+    right 260ms var(--pip-ease),
+    bottom 260ms var(--pip-ease);
+}
+/* The page keeps its width as the right edge grows over it, so its text never rewraps. */
+.fp-window .view-content > .markdown-reading-view,
+.fp-window .view-content > .fp-old {
+  position: absolute !important;
+  inset: 0 auto 0 0 !important;
+  width: calc(100vw - 2 * var(--pip-frame)) !important;
+}
+.fp-window .markdown-preview-view {
+  --fade: 28px;
+  /* The page fades out at its top and bottom while there's more to scroll that way. */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black var(--fade-above, 0px),
+    black calc(100% - var(--fade-below, 0px)),
+    transparent
+  );
+}
+.fp-window .markdown-preview-view:not(.has-above) {
+  --fade-above: 0px;
+}
+.fp-window .markdown-preview-view.has-above {
+  --fade-above: var(--fade);
+}
+.fp-window .markdown-preview-view.has-below {
+  --fade-below: var(--fade);
+}
+.fp-window.is-dragging,
+.fp-window.is-dragging * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fp-window .view-header,
+  .fp-window .view-content {
+    transition: none;
+  }
+}
+
+/* Tucked past a screen edge, the preview shows only a thin handle: click, drag or swipe it to bring the window back. */
+.fp-window:is(.is-tucked-left, .is-tucked-right)::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  z-index: 100;
+  cursor: pointer;
+  background: linear-gradient(var(--text-muted), var(--text-muted)) center / 3px
+    32px no-repeat;
+}
+.fp-window.is-tucked-left::after {
+  right: 0;
+}
+.fp-window.is-tucked-right::after {
+  left: 0;
+}
+
+/* The page being switched away from, fading out over the new one (floating-preview). */
+.fp-window .markdown-preview-view.fp-old {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/*
+ * The switcher and the section rail (floating-preview) are the frame's
+ * bottom and right edges: hidden in the thin border until the cursor moves
+ * out toward them, then grown into a slim bar, like the top one. What they
+ * open (the roadmap list, the section names) pops out over the page, so
+ * the edges stay slim.
+ */
+.fp-window:is(.is-tucked-left, .is-tucked-right)
+  :is(.fp-switcher, .fp-rail, .fp-switcher-popout, .fp-rail-labels) {
+  display: none;
+}
+.fp-switcher,
+.fp-rail {
+  position: fixed;
+  z-index: 15;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  font-size: 12px;
+  transition:
+    height 240ms var(--pip-ease),
+    width 240ms var(--pip-ease),
+    top 220ms var(--pip-ease),
+    bottom 240ms var(--pip-ease),
+    right 240ms var(--pip-ease),
+    opacity 160ms ease-out;
+}
+.fp-window:is(.is-near-bottom, .is-switcher-open) .fp-switcher,
+.fp-window.has-scroll:is(.is-near-right, .is-rail-open, .is-scrolling) .fp-rail {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Switcher: ‹ name n/total › in the bottom edge. */
+.fp-switcher {
+  /* Full width even with the rail open: the rail stops short of the bottom corner. */
+  left: var(--pip-frame);
+  right: var(--pip-frame);
+  bottom: 0;
+  height: var(--pip-bottom);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+}
+.fp-switcher-bar {
+  display: contents;
+}
+.fp-switcher-step,
+.fp-switcher-title {
+  height: 24px;
+  padding: 0 !important;
+  border-radius: 6px;
+  background: transparent !important;
+  box-shadow: none !important;
+  cursor: default;
+}
+.fp-switcher-step {
+  flex: none;
+  width: 24px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+}
+.fp-switcher-step svg {
+  width: 13px;
+  height: 13px;
+}
+.fp-switcher-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-inline: auto;
+  padding-inline: 8px !important;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.fp-switcher-step:hover,
+.fp-switcher-title:hover,
+.fp-window.is-switcher-open .fp-switcher-title {
+  background: rgb(255 255 255 / 0.09) !important;
+  color: var(--text-normal);
+}
+.fp-switcher-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-normal);
+  font-weight: 500;
+}
+.fp-switcher-where {
+  flex: none;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The roadmap list, popped out above the switcher. */
+.fp-switcher-popout {
+  position: fixed;
+  z-index: 25;
+  left: 50%;
+  bottom: calc(var(--pip-bottom) + 6px);
+  width: min(300px, calc(100vw - 24px));
+  height: min(250px, calc(100vh - var(--pip-top) - var(--pip-bottom) - 20px));
+  display: flex;
+  border-radius: 11px;
+  background: var(--pip-popout-bg);
+  border: 1px solid var(--pip-popout-border);
+  box-shadow: var(--pip-popout-shadow);
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 50% 100%;
+  translate: -50% 0;
+  scale: 0.96;
+  transition:
+    opacity 140ms ease-out,
+    scale 220ms var(--pip-ease);
+}
+.fp-window.is-switcher-open .fp-switcher-popout {
+  opacity: 1;
+  pointer-events: auto;
+  scale: 1;
+}
+.fp-switcher-list {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px;
+  -webkit-mask-image: linear-gradient(transparent, black 10px, black calc(100% - 10px), transparent);
+}
+.fp-switcher-list::-webkit-scrollbar {
+  display: none;
+}
+.fp-switcher-group {
+  padding: 8px 8px 3px;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 500;
+}
+.fp-switcher-item {
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fp-switcher-item.is-sub {
+  padding-left: 22px;
+}
+.fp-switcher-item:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: var(--text-normal);
+}
+.fp-switcher-item.is-current {
+  background: color-mix(in srgb, var(--interactive-accent) 30%, transparent);
+  color: var(--text-normal);
+  font-weight: 500;
+}
+
+/* Rail: the page's scroll position and a mark per section in the right edge. */
+.fp-rail,
+.fp-rail-labels {
+  /* Only alongside the page's straight side, clear of its rounded corners. */
+  top: calc(var(--pip-top) + var(--pip-radius) - var(--pip-frame));
+  bottom: calc(var(--pip-bottom) + var(--pip-radius) - var(--pip-frame));
+}
+.fp-rail {
+  right: 0;
+  width: var(--pip-right);
+}
+.fp-rail.is-hidden {
+  display: none;
+}
+.fp-rail-track {
+  /* Centred in the edge: as far from the window's side as from the page. */
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* Centred between the page and the window's edge, whose 1px rim counts as edge. */
+  right: calc(var(--pip-frame) + 1px);
+  width: calc(var(--pip-rail) - 2 * var(--pip-frame) - 1px);
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.08);
+  cursor: default;
+}
+.fp-rail-thumb {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-radius: inherit;
+  background: rgb(255 255 255 / 0.3);
+}
+.fp-rail-tick {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  background: rgb(255 255 255 / 0.5);
+}
+.fp-rail-tick.is-current {
+  background: var(--interactive-accent);
+}
+
+/* Section names, popped out beside the rail over the page while it's hovered. */
+.fp-rail-labels {
+  position: fixed;
+  z-index: 25;
+  right: calc(var(--pip-right) + 4px);
+  width: 170px;
+  pointer-events: none;
+}
+.fp-rail-label:not(.is-shown) {
+  opacity: 0;
+  pointer-events: none;
+  translate: 6px -50%;
+}
+.fp-rail-label {
+  position: absolute;
+  right: 0;
+  max-width: 100%;
+  translate: 0 -50%;
+  padding: 2px 8px;
+  border-radius: 7px;
+  background: var(--pip-popout-bg);
+  border: 1px solid var(--pip-popout-border);
+  box-shadow: var(--pip-popout-shadow);
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: auto;
+  transition:
+    opacity 140ms ease-out,
+    translate 220ms var(--pip-ease);
+}
+.fp-rail-label:hover {
+  color: var(--text-normal);
+}
+.fp-rail-label.is-current {
+  color: var(--text-normal);
+  font-weight: 500;
+  border-color: color-mix(in srgb, var(--interactive-accent) 55%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fp-switcher,
+  .fp-rail,
+  .fp-switcher-popout,
+  .fp-rail-label {
+    transition: none;
+  }
+}
+/* A little room under the page's end. */
+.fp-window .markdown-preview-view .markdown-preview-sizer {
+  padding-bottom: 24px !important;
+}
+.fp-window .metadata-properties-heading {
+  align-items: center;
+  gap: 6px;
+}
+.fp-window .metadata-properties-heading .collapse-indicator {
+  position: static !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* The page pulls past its ends on its own compositor layer (floating-preview), so it stays smooth. */
+.fp-window .markdown-preview-view:not(.fp-old) .markdown-preview-sizer {
+  will-change: transform;
+}
