@@ -69,10 +69,14 @@ class Tracker {
  * loaded for the life of the process, so a rebuild gets a new name.
  */
 function loadGlass(dir) {
-  const src = path.join(dir, "glass.node")
-  const copy = path.join(os.tmpdir(), `floating-preview-glass-${fs.statSync(src).mtimeMs}.node`)
-  if (!fs.existsSync(copy)) fs.copyFileSync(src, copy)
-  return require(copy)
+  try {
+    const src = path.join(dir, "glass.node")
+    const copy = path.join(os.tmpdir(), `floating-preview-glass-${fs.statSync(src).mtimeMs}.node`)
+    if (!fs.existsSync(copy)) fs.copyFileSync(src, copy)
+    return require(copy)
+  } catch {
+    return null // not built or downloaded (yet): the window goes without glass
+  }
 }
 
 const workArea = (b) => screen.getDisplayMatching(b).workArea
@@ -103,16 +107,18 @@ class Pip {
   /**
    * windowId: the preview window.
    * dir: this plugin's folder (pip-helper and glass.node).
-   * glass: glass.node's options for the window's look.
+   * glass: glass.node's options for the window's look, or null for none.
+   * swipes: whether two-finger swipes on the top bar move the window.
    * state: { bounds, tucked } where it was left.
    * onSettle({ bounds, tucked }): where it was put, to keep.
    */
-  constructor({ windowId, dir, glass, state, onSettle }) {
+  constructor({ windowId, dir, glass, swipes, state, onSettle }) {
     this.window = BrowserWindow.fromId(windowId)
-    const native = loadGlass(dir)
-    native.apply(this.window.getNativeWindowHandle(), glass)
+    this.dir = dir
+    this.native = loadGlass(dir)
+    this.setGlass(glass)
     // Clicks in it don't bring Obsidian forward over the app you're in.
-    native.preventActivation(this.window.getNativeWindowHandle())
+    if (this.native) this.native.preventActivation(this.window.getNativeWindowHandle())
     this.state = { bounds: state.bounds || null, tucked: state.tucked || null }
     this.onSettle = onSettle
     this.timer = null
@@ -120,7 +126,7 @@ class Pip {
     this.drag = null
     this.swipe = null
     this.helper = null
-    this.startHelper(`${dir}/pip-helper`)
+    this.setSwipes(swipes)
     // macOS pulls a window that's mostly off screen back on as it first
     // appears; a tucked one goes back where it belongs once it's shown.
     if (this.state.tucked) {
@@ -302,6 +308,27 @@ class Pip {
   }
 
   // ── Swiping, from pip-helper's trackpad events ────────────────────────
+
+  /** Liquid Glass behind the page (glass.node's options), or none (null). */
+  setGlass(options) {
+    if (!this.native || !this.alive()) return
+    const handle = this.window.getNativeWindowHandle()
+    if (options) this.native.apply(handle, options)
+    else this.native.remove(handle)
+  }
+
+  /** Swipes move the window while the trackpad helper runs. */
+  setSwipes(on) {
+    if (on && !this.helper) this.startHelper(path.join(this.dir, "pip-helper"))
+    if (!on && this.helper) {
+      try {
+        this.helper.stdin.end()
+        this.helper.kill()
+      } catch {}
+      this.helper = null
+      this.swipe = null
+    }
+  }
 
   startHelper(path) {
     if (!path) return

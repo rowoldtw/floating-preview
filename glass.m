@@ -70,7 +70,7 @@ static napi_value apply(napi_env env, napi_callback_info info) {
   napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
   NSView* view = argc > 0 ? viewFrom(env, argv[0]) : nil;
   NSWindow* window = view.window;
-  if (!window || !NSClassFromString(@"NSGlassEffectView")) return result(env, false);
+  if (!window) return result(env, false);
   NSView* root = window.contentView;
   [existing(root) removeFromSuperview];
   napi_value o = argc > 1 ? argv[1] : NULL;
@@ -86,13 +86,15 @@ static napi_value apply(napi_env env, napi_callback_info info) {
     blur.layer.cornerCurve = kCACornerCurveContinuous;
     blur.layer.masksToBounds = YES;
     layerView = blur;
-  } else {
+  } else if (@available(macOS 26.0, *)) {
     NSGlassEffectView* glass = [[NSGlassEffectView alloc] initWithFrame:root.bounds];
     glass.cornerRadius = radius;
     glass.style = (!o || flag(env, o, "clear", true)) ? NSGlassEffectViewStyleClear : NSGlassEffectViewStyleRegular;
     double tint = o ? number(env, o, "tint", 0) : 0;
     glass.tintColor = tint > 0 ? [NSColor colorWithWhite:0 alpha:tint] : nil;
     layerView = glass;
+  } else {
+    return result(env, false);  // Liquid Glass needs macOS 26
   }
   // Glass adapts to what's behind it, flipping between a light and a dark
   // look as that changes; held to the dark look, it stays put.

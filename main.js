@@ -31,7 +31,7 @@
  * thin rail showing where you are on the page, with a mark per section, each
  * section's name popping out beside its mark as the cursor nears it.
  */
-const { Plugin, PluginSettingTab, Setting, TFile, setIcon } = require("obsidian")
+const { Notice, Plugin, PluginSettingTab, Setting, TFile, requestUrl, setIcon } = require("obsidian")
 
 const SIZE = { width: 450, height: 400 }
 /** Switching pages: the new one rises this far (px) and sharpens from this blur, over these times (ms). */
@@ -53,7 +53,7 @@ const INTERACTIVE = "a, button, input, .clickable-icon"
  * corners of this radius. tint (0–1) darkens it for legibility; alpha below
  * 1 lets the sharp desktop show through.
  */
-const GLASS = { clear: false, tint: 0.3, alpha: 1, radius: 16 }
+const GLASS = { tint: 0.3, alpha: 1, radius: 16 }
 /** Movement before a press becomes a drag, so clicks stay clicks. */
 const DRAG_THRESHOLD = 4
 /**
@@ -98,7 +98,37 @@ const DEFAULTS = {
    * the links on the note you hovered from.
    */
   orderNotes: "",
+  /** Liquid Glass behind the window (macOS 26 on); off, the window is a plain tint. */
+  glass: true,
+  /** "regular" blurs what's behind; "clear" barely does. */
+  glassStyle: "regular",
+  /** How dark the layer over the glass is, 0–1. */
+  darkness: 0.55,
+  /** The window stays in place on every Space (and over full-screen apps). */
+  allSpaces: true,
+  /** Two-finger swipes on the top bar move the window (needs the trackpad helper). */
+  swipeToMove: true,
+  /** Pages pull past their ends and spring back. */
+  overscroll: true,
+  /** Links to the previewed note turn yellow in Obsidian's other windows. */
+  markPreviewed: true,
 }
+
+/**
+ * The files BRAT doesn't install (it takes only main.js, manifest.json and
+ * styles.css): the native parts and the code that runs in Electron's main
+ * process. Their SHA-256s are written in by the release build (see
+ * .github/workflows/release.yml); a release downloads them from its own
+ * GitHub release and checks them against these. A build from source
+ * (scripts/install.sh) has them already, and these stay unset.
+ */
+const RELEASE_FILES = {
+  "pip-helper": "__PIP_HELPER_SHA256__",
+  "glass.node": "__GLASS_NODE_SHA256__",
+  "pip-main.js": "__PIP_MAIN_SHA256__",
+  "pip-load.js": "__PIP_LOAD_SHA256__",
+}
+const REPO = "rowoldtw/floating-preview"
 
 /** A glob ("*" within a folder, "**" across folders) as a RegExp over vault paths. */
 const globToRegExp = (glob) =>
@@ -329,7 +359,7 @@ module.exports = class extends Plugin {
     })
     docs.add(document)
     let css = ""
-    if (file) {
+    if (file && this.settings.markPreviewed) {
       const hrefs = [file.path, file.path.replace(/\.md$/, ""), file.basename]
         .map((h) => `a.internal-link[data-href=${JSON.stringify(h)}]`)
         .join(", ")
@@ -838,7 +868,8 @@ module.exports = class extends Plugin {
       if (!win) await sleep(25)
     }
     if (!win) return
-    const dir = `${this.app.vault.adapter.getBasePath()}/${this.manifest.dir}`
+    const dir = this.pluginDir()
+    await this.ensureNatives()
     const pipMain = remote().require(`${dir}/pip-load.js`).load(`${dir}/pip-main.js`)
 
     const start = pipMain.placement({
@@ -847,8 +878,8 @@ module.exports = class extends Plugin {
       size: SIZE,
     })
     win.setAlwaysOnTop(true, "floating")
-    win.setVisibleOnAllWorkspaces(true, {
-      visibleOnFullScreen: true,
+    win.setVisibleOnAllWorkspaces(this.settings.allSpaces, {
+      visibleOnFullScreen: this.settings.allSpaces,
       skipTransformProcessType: true,
     })
     win.setBackgroundColor("#00000000")
@@ -859,7 +890,8 @@ module.exports = class extends Plugin {
     this.pip = pipMain.create({
       windowId: win.id,
       dir,
-      glass: GLASS,
+      glass: this.glassOptions(),
+      swipes: this.settings.swipeToMove,
       state: { bounds: this.settings.bounds, tucked: this.settings.tucked },
       // Where it was put: keep it, and show the handle if it's tucked.
       onSettle: (state) => {
@@ -873,6 +905,77 @@ module.exports = class extends Plugin {
     this.win = win
     // Keep working where you were: the new windows don't take focus.
     main.focus()
+  }
+
+  pluginDir() {
+    return `${this.app.vault.adapter.getBasePath()}/${this.manifest.dir}`
+  }
+
+  glassOptions() {
+    return this.settings.glass ? { ...GLASS, clear: this.settings.glassStyle === "clear" } : null
+  }
+
+  /** Puts changed settings into effect on an open window. */
+  applySettings() {
+    const doc = this.leaf && this.leaf.view.containerEl.ownerDocument
+    if (doc && doc !== document) doc.body.style.setProperty("--fp-darkness", String(this.settings.darkness))
+    if (this.isOpen()) {
+      this.win.setVisibleOnAllWorkspaces(this.settings.allSpaces, {
+        visibleOnFullScreen: this.settings.allSpaces,
+        skipTransformProcessType: true,
+      })
+      if (this.pip) {
+        this.pip.setGlass(this.glassOptions())
+        this.pip.setSwipes(this.settings.swipeToMove)
+      }
+    }
+    this.markCurrent(this.isOpen() ? this.leaf.view.file : null)
+  }
+
+  /**
+   * A release installed by BRAT comes without its native parts (the
+   * trackpad helper and the glass module) and its main-process code:
+   * they're downloaded once per version from the same GitHub release and
+   * checked against the SHA-256s this file was built with.
+   */
+  async ensureNatives() {
+    const pending = Object.entries(RELEASE_FILES).filter(([, sha]) => !sha.startsWith("__"))
+    if (!pending.length) return // built from source
+    const fs = require("fs")
+    const crypto = require("crypto")
+    const dir = this.pluginDir()
+    const marker = `${dir}/natives-version`
+    const version = this.manifest.version
+    const ready = () => {
+      try {
+        return fs.readFileSync(marker, "utf8").trim() === version
+      } catch {
+        return false
+      }
+    }
+    if (ready()) return
+    if (this.downloading) return this.downloading
+    this.downloading = (async () => {
+      try {
+        for (const [name, sha] of pending) {
+          const res = await requestUrl({
+            url: `https://github.com/${REPO}/releases/download/${version}/${name}`,
+          })
+          const data = Buffer.from(res.arrayBuffer)
+          const got = crypto.createHash("sha256").update(data).digest("hex")
+          if (got !== sha) throw new Error(`${name} didn't match its checksum`)
+          fs.writeFileSync(`${dir}/${name}`, data)
+          fs.chmodSync(`${dir}/${name}`, 0o755)
+        }
+        fs.writeFileSync(marker, version)
+      } catch (error) {
+        console.error("Floating Preview: couldn't get its native parts", error)
+        new Notice("Floating Preview couldn't download the rest of itself from GitHub. Check your connection and hover a link again.")
+      } finally {
+        this.downloading = null
+      }
+    })()
+    return this.downloading
   }
 
   /** A close button at the end of the top bar; the next hovered link opens the window again. */
@@ -889,6 +992,7 @@ module.exports = class extends Plugin {
     if (!doc || doc === document || doc.body.classList.contains("fp-window"))
       return
     doc.body.classList.add("fp-window")
+    doc.body.style.setProperty("--fp-darkness", String(this.settings.darkness))
     doc.documentElement.classList.add("fp-root")
     this.showTucked()
     // Touch-down and lift on the trackpad, from pip-main.js, for whatever needs them.
@@ -984,7 +1088,7 @@ module.exports = class extends Plugin {
       "wheel",
       (event) => {
         const page = this.page()
-        if (!page || event.ctrlKey || !page.contains(event.target)) return
+        if (!page || event.ctrlKey || !page.contains(event.target) || !this.settings.overscroll) return
         const atTop = page.scrollTop <= 0
         const atBottom = page.scrollTop + page.clientHeight >= page.scrollHeight - 1
         const dy = event.deltaY
@@ -1303,22 +1407,72 @@ class FloatingPreviewSettings extends PluginSettingTab {
 
   display() {
     const { containerEl } = this
+    const plugin = this.plugin
+    const save = async (key, value) => {
+      plugin.settings[key] = value
+      await plugin.saveData(plugin.settings)
+      plugin.applySettings()
+    }
     containerEl.empty()
+
+    new Setting(containerEl).setName("Look").setHeading()
+    new Setting(containerEl)
+      .setName("Liquid Glass")
+      .setDesc("The desktop shows through the window, blurred (macOS 26 or later). Off, the window is a plain tint.")
+      .addToggle((t) => t.setValue(plugin.settings.glass).onChange((v) => save("glass", v)))
+    new Setting(containerEl)
+      .setName("Glass style")
+      .setDesc("Regular blurs what's behind the window; clear barely does.")
+      .addDropdown((d) =>
+        d
+          .addOptions({ regular: "Regular", clear: "Clear" })
+          .setValue(plugin.settings.glassStyle)
+          .onChange((v) => save("glassStyle", v))
+      )
+    new Setting(containerEl)
+      .setName("Darkness")
+      .setDesc("How dark the window is over the glass, so the page stays readable.")
+      .addSlider((sl) =>
+        sl
+          .setLimits(0, 100, 5)
+          .setValue(Math.round(plugin.settings.darkness * 100))
+          .setDynamicTooltip()
+          .onChange((v) => save("darkness", v / 100))
+      )
+    new Setting(containerEl)
+      .setName("Mark the previewed note")
+      .setDesc("Links to the note in the window turn yellow in Obsidian's other windows and the file list.")
+      .addToggle((t) => t.setValue(plugin.settings.markPreviewed).onChange((v) => save("markPreviewed", v)))
+
+    new Setting(containerEl).setName("Behaviour").setHeading()
+    new Setting(containerEl)
+      .setName("Show on every Space")
+      .setDesc("The window stays in the same place on every Space and over full-screen apps.")
+      .addToggle((t) => t.setValue(plugin.settings.allSpaces).onChange((v) => save("allSpaces", v)))
+    new Setting(containerEl)
+      .setName("Swipe to move")
+      .setDesc("Two-finger swipes on the top bar move the window, like dragging it.")
+      .addToggle((t) => t.setValue(plugin.settings.swipeToMove).onChange((v) => save("swipeToMove", v)))
+    new Setting(containerEl)
+      .setName("Overscroll")
+      .setDesc("Pages pull past their top and bottom and spring back.")
+      .addToggle((t) => t.setValue(plugin.settings.overscroll).onChange((v) => save("overscroll", v)))
+
+    new Setting(containerEl).setName("Order").setHeading()
     new Setting(containerEl)
       .setName("Order notes")
       .setDesc(
         "Notes whose lists of links set the order the bottom bar steps through, " +
           "grouped by their headings and callouts. Glob patterns, one per line " +
-          "(e.g. Roadmap/Phase */Phase *.md). Empty: the links on the note you hovered from."
+          "(like Roadmap/*.md). Empty: the links on the note you hovered from."
       )
       .addTextArea((text) =>
         text
           .setPlaceholder("Roadmap/*.md")
-          .setValue(this.plugin.settings.orderNotes)
+          .setValue(plugin.settings.orderNotes)
           .onChange(async (value) => {
-            this.plugin.settings.orderNotes = value
-            this.plugin.items = null
-            await this.plugin.saveData(this.plugin.settings)
+            plugin.items = null
+            await save("orderNotes", value)
           })
       )
   }

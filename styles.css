@@ -38,7 +38,7 @@ html.fp-root body.fp-window .mod-root {
 }
 html.fp-root body.fp-window {
   /* A steady dark layer over the glass: less see-through, and it hides the glass's own shifts. */
-  background: rgb(44 44 46 / 0.55) !important;
+  background: rgb(44 44 46 / var(--fp-darkness, 0.55)) !important;
 }
 .fp-window.is-near-top,
 .fp-window.is-dragging {

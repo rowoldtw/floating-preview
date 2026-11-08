@@ -4,3 +4,4 @@ glass.node
 # The plugin's settings and window position, per vault.
 data.json
 .DS_Store
+natives-version

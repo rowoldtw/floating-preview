@@ -1,0 +1,52 @@
+# Pushing a version tag (like 1.1.0, matching manifest.json) builds a
+# release that BRAT can install: main.js, manifest.json and styles.css, plus
+# what the plugin downloads for itself (BRAT installs only those three): the
+# native parts, built for both Apple Silicon and Intel Macs, and its
+# main-process code. main.js gets their SHA-256s written in, so the plugin
+# can check what it downloads.
+name: Release
+
+on:
+  push:
+    tags: ["*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag matches the manifest
+        run: |
+          version=$(plutil -extract version raw manifest.json)
+          [ "$version" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME, manifest $version"; exit 1; }
+
+      - name: Build the native parts
+        run: |
+          mkdir -p dist
+          for arch in arm64 x86_64; do
+            swiftc -O -target "$arch-apple-macos13" pip-helper.swift -o "pip-helper-$arch"
+          done
+          lipo -create pip-helper-arm64 pip-helper-x86_64 -output dist/pip-helper
+          clang -bundle -undefined dynamic_lookup -fobjc-arc -O2 -mmacosx-version-min=13.0 \
+            -arch arm64 -arch x86_64 -framework AppKit -framework QuartzCore glass.m -o dist/glass.node
+
+      - name: Write their checksums into main.js
+        run: |
+          cp manifest.json styles.css pip-main.js pip-load.js dist/
+          sha() { shasum -a 256 "dist/$1" | cut -d' ' -f1; }
+          sed -e "s/__PIP_HELPER_SHA256__/$(sha pip-helper)/" \
+              -e "s/__GLASS_NODE_SHA256__/$(sha glass.node)/" \
+              -e "s/__PIP_MAIN_SHA256__/$(sha pip-main.js)/" \
+              -e "s/__PIP_LOAD_SHA256__/$(sha pip-load.js)/" main.js > dist/main.js
+          ! grep -q "_SHA256__" dist/main.js
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "$GITHUB_REF_NAME" --generate-notes
