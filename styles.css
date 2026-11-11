@@ -1,5 +1,5 @@
 /*
- * The floating preview window (floating-preview). The window is Liquid Glass
+ * The Muta window. The window is Liquid Glass
  * (added natively), so everything here is transparent but tints: a light
  * one on the frame and a darker one on the page. At rest the frame is a thin border around the page; with the
  * cursor near the top, its top grows into a bar with the page's buttons
@@ -53,7 +53,7 @@ html.fp-root body.fp-window {
 .fp-window .workspace-leaf-content {
   position: relative;
 }
-/* Properties: one panel, collapsed to its heading by default (floating-preview), with the page's corner radius. */
+/* Properties: one panel, collapsed to its heading by default (main.js), with the page's corner radius. */
 .fp-window .metadata-container {
   /* Rows' hover and focus outlines sit concentric inside the panel's corners. */
   --metadata-property-radius: calc(var(--pip-radius) - var(--pip-frame) - 4px);
@@ -81,7 +81,7 @@ html.fp-root body.fp-window {
 }
 /* The theme widens the rows past the panel and shifts them left; here they stay inside it. */
 html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
-  /* While morphing, held at the open panel's width (--pip-props-width, set by floating-preview). */
+  /* While morphing, held at the open panel's width (--pip-props-width, set by main.js). */
   width: var(--pip-props-width, 100%) !important;
   transform: none !important;
 }
@@ -95,7 +95,7 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
   width: max-content !important;
 }
 
-/* While the panel morphs open or closed (floating-preview), its rows stay drawn inside it. */
+/* While the panel morphs open or closed (main.js), its rows stay drawn inside it. */
 .fp-window .metadata-container.is-morphing {
   overflow: hidden;
 }
@@ -214,7 +214,7 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
   left: 0;
 }
 
-/* The page being switched away from, fading out over the new one (floating-preview). */
+/* The page being switched away from, fading out over the new one (main.js). */
 .fp-window .markdown-preview-view.fp-old {
   position: absolute;
   inset: 0;
@@ -223,7 +223,7 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
 }
 
 /*
- * The switcher and the section rail (floating-preview) are the frame's
+ * The switcher and the section rail (main.js) are the frame's
  * bottom and right edges: hidden in the thin border until the cursor moves
  * out toward them, then grown into a slim bar, like the top one. What they
  * open (the roadmap list, the section names) pops out over the page, so
@@ -496,7 +496,7 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
   padding: 0 !important;
 }
 
-/* The page pulls past its ends on its own compositor layer (floating-preview), so it stays smooth. */
+/* The page pulls past its ends on its own compositor layer (main.js), so it stays smooth. */
 .fp-window .markdown-preview-view:not(.fp-old) .markdown-preview-sizer {
   will-change: transform;
 }

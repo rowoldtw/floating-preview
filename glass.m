@@ -29,7 +29,7 @@ extern napi_status napi_create_function(napi_env, const char*, size_t, napi_call
 extern napi_status napi_set_named_property(napi_env, napi_value, const char*, napi_value);
 extern napi_status napi_get_boolean(napi_env, bool, napi_value*);
 
-static NSString* const kId = @"floating-preview-glass";
+static NSString* const kId = @"muta-glass";
 
 static NSView* viewFrom(napi_env env, napi_value buffer) {
   void* data = NULL;

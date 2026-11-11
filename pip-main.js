@@ -71,7 +71,7 @@ class Tracker {
 function loadGlass(dir) {
   try {
     const src = path.join(dir, "glass.node")
-    const copy = path.join(os.tmpdir(), `floating-preview-glass-${fs.statSync(src).mtimeMs}.node`)
+    const copy = path.join(os.tmpdir(), `muta-glass-${fs.statSync(src).mtimeMs}.node`)
     if (!fs.existsSync(copy)) fs.copyFileSync(src, copy)
     return require(copy)
   } catch {
@@ -381,7 +381,7 @@ class Pip {
   sendPage(event) {
     if (this.window.isDestroyed()) return
     this.window.webContents
-      .executeJavaScript(`window.floatingPreviewGesture && window.floatingPreviewGesture("${event}")`)
+      .executeJavaScript(`window.mutaGesture && window.mutaGesture("${event}")`)
       .catch(() => {})
   }
 
@@ -463,9 +463,9 @@ class Pip {
 
 /** One preview at a time; a new one (or a plugin reload) replaces the old. */
 exports.create = (options) => {
-  if (global.__floatingPreview) global.__floatingPreview.dispose()
-  global.__floatingPreview = new Pip(options)
-  return global.__floatingPreview
+  if (global.__muta) global.__muta.dispose()
+  global.__muta = new Pip(options)
+  return global.__muta
 }
 
 /** Where a new window starts: where it was left, or the bottom-right corner. */
@@ -475,6 +475,6 @@ exports.placement = ({ bounds, tucked, size }) => {
 }
 
 exports.dispose = () => {
-  if (global.__floatingPreview) global.__floatingPreview.dispose()
-  global.__floatingPreview = null
+  if (global.__muta) global.__muta.dispose()
+  global.__muta = null
 }

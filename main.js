@@ -128,7 +128,7 @@ const RELEASE_FILES = {
   "pip-main.js": "__PIP_MAIN_SHA256__",
   "pip-load.js": "__PIP_LOAD_SHA256__",
 }
-const REPO = "rowoldtw/floating-preview"
+const REPO = "rowoldtw/muta"
 
 /** A glob ("*" within a folder, "**" across folders) as a RegExp over vault paths. */
 const globToRegExp = (glob) =>
@@ -153,7 +153,7 @@ const alive = (w) => !!(w && !w.isDestroyed())
 module.exports = class extends Plugin {
   async onload() {
     this.settings = Object.assign({}, DEFAULTS, await this.loadData())
-    this.addSettingTab(new FloatingPreviewSettings(this.app, this))
+    this.addSettingTab(new MutaSettings(this.app, this))
     this.leaf = null
     this.win = null
     this.next = null
@@ -374,14 +374,14 @@ module.exports = class extends Plugin {
         .nav-file-title[data-path=${JSON.stringify(file.path)}] .nav-file-title-content { ${mark} }`
     }
     for (const doc of docs) {
-      let style = doc.getElementById("floating-preview-current")
+      let style = doc.getElementById("muta-current")
       if (!css) {
         if (style) style.remove()
         continue
       }
       if (!style) {
         style = doc.createElement("style")
-        style.id = "floating-preview-current"
+        style.id = "muta-current"
         doc.head.appendChild(style)
       }
       style.textContent = css
@@ -969,8 +969,8 @@ module.exports = class extends Plugin {
         }
         fs.writeFileSync(marker, version)
       } catch (error) {
-        console.error("Floating Preview: couldn't get its native parts", error)
-        new Notice("Floating Preview couldn't download the rest of itself from GitHub. Check your connection and hover a link again.")
+        console.error("Muta: couldn't get its native parts", error)
+        new Notice("Muta couldn't download the rest of itself from GitHub. Check your connection and hover a link again.")
       } finally {
         this.downloading = null
       }
@@ -998,7 +998,7 @@ module.exports = class extends Plugin {
     // Touch-down and lift on the trackpad, from pip-main.js, for whatever needs them.
     const gestures = new Set()
     this.onGesture = (handler) => gestures.add(handler)
-    doc.defaultView.floatingPreviewGesture = (phase) => gestures.forEach((handler) => handler(phase))
+    doc.defaultView.mutaGesture = (phase) => gestures.forEach((handler) => handler(phase))
     this.attachEdges(doc)
     this.attachOverscroll(doc)
     this.attachDrag(doc)
@@ -1399,7 +1399,7 @@ module.exports = class extends Plugin {
   }
 }
 
-class FloatingPreviewSettings extends PluginSettingTab {
+class MutaSettings extends PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin)
     this.plugin = plugin

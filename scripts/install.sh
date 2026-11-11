@@ -1,9 +1,9 @@
 #!/bin/sh
-# Builds Floating Preview's native parts for this Mac and installs it into a
+# Builds Muta's native parts for this Mac and installs it into a
 # vault: ./scripts/install.sh "/path/to/vault"
 #
 # The vault's plugin folder links back here, so `git pull` and running this
-# again updates it. Then enable "Floating Preview" in Obsidian's community
+# again updates it. Then enable "Muta" in Obsidian's community
 # plugins (reload Obsidian first if it was already open).
 set -eu
 
@@ -18,7 +18,7 @@ swiftc -O "$here/pip-helper.swift" -o "$here/pip-helper"
 clang -bundle -undefined dynamic_lookup -fobjc-arc -O2 \
   -framework AppKit -framework QuartzCore "$here/glass.m" -o "$here/glass.node"
 
-target="$vault/.obsidian/plugins/floating-preview"
+target="$vault/.obsidian/plugins/muta"
 mkdir -p "$vault/.obsidian/plugins"
 if [ -e "$target" ] && [ ! -L "$target" ]; then
   echo "$target already exists and isn't a link to this folder; move it aside first." >&2
