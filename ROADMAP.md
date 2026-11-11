@@ -6,7 +6,7 @@ Phases are rough order, not releases. Each feature's file in [features/](feature
 
 ## Phase 1: The floating window
 
-Hovering a link shows its page in a small window that floats over every app, and moves like picture in picture. Shipped in 1.1.0.
+Hovering a link shows its page in a small window that floats over every app, and moves like picture in picture. Shipped in 0.1.0, the first release as Muta (Floating Preview 1.1.0 before it).
 
 > [!area] Window
 >
@@ -45,12 +45,12 @@ Hovering a link shows its page in a small window that floats over every app, and
 
 ## Phase 2: Feel
 
-Making the window feel native: borderless chrome, haptics, and a tuck that holds up everywhere. Planned as 1.2.0. Prototypes of most of these are on the `backup-dev` and `backup-local-main` branches; bring them over one at a time. Lines marked *Proposed* come from the Notion list and don't have files yet.
+Making the window feel native: borderless chrome, haptics, and a tuck that holds up everywhere. Planned as 0.2.0; the borderless top bar, menus at the button and settings cards shipped early, in 0.1.0. Prototypes of most of these are on the `backup-dev` and `backup-local-main` branches; bring them over one at a time. Lines marked *Proposed* come from the Notion list and don't have files yet.
 
 > [!area] Chrome
 >
-> - [ ] [Borderless top bar](features/Phase%202/Borderless%20top%20bar.md): No traffic lights: the menu sits in the top bar's left corner and the close button in the right.
-> - [ ] [Menus at the button](features/Phase%202/Menus%20at%20the%20button.md): Menus opened from the preview (More options, a right-click) open at the button, over the preview window.
+> - [x] [Borderless top bar](features/Phase%202/Borderless%20top%20bar.md): No traffic lights: the menu sits in the top bar's left corner and the close button in the right.
+> - [x] [Menus at the button](features/Phase%202/Menus%20at%20the%20button.md): Menus opened from the preview (More options, a right-click) open at the button, over the preview window.
 > - [x] [Settings cards](features/Phase%202/Settings%20cards.md): Each settings group (Look, Behaviour, Order) sits in one card, like Obsidian's own settings.
 > - *Proposed:* Links clicked in the preview open in Obsidian instead of replacing the preview's page.
 

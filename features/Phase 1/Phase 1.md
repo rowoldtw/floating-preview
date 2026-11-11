@@ -2,7 +2,7 @@
 name: The floating window
 ---
 
-Hovering a link shows its page in a small window that floats over every app, and moves like picture in picture. Shipped in 1.1.0.
+Hovering a link shows its page in a small window that floats over every app, and moves like picture in picture. Shipped in 0.1.0, the first release as Muta (Floating Preview 1.1.0 before it).
 
 > [!area] Window
 >

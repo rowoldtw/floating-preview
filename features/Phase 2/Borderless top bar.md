@@ -1,6 +1,5 @@
 ---
-status: in-progress
-priority: high
+status: done
 native: false
 area: Chrome
 ---
@@ -15,8 +14,6 @@ No traffic lights: the menu sits in the top bar's left corner and the close butt
 >
 > Ported from `backup-dev` (8ec9a05), with an earlier take on `backup-local-main` (ddfe049, 86bd27e).
 
-> [!todo] Left to do
-> Confirm in Obsidian.
 
 > [!out] Left out
 > Native traffic lights in the bar: minimise and zoom don't suit a floating preview, they can't grow with the bar, and they'd stay grey because the preview never takes focus.
