@@ -31,7 +31,7 @@
  * thin rail showing where you are on the page, with a mark per section, each
  * section's name popping out beside its mark as the cursor nears it.
  */
-const { Notice, Plugin, PluginSettingTab, SettingGroup, TFile, requestUrl, setIcon } = require("obsidian")
+const { Menu, Notice, Plugin, PluginSettingTab, SettingGroup, TFile, requestUrl, setIcon } = require("obsidian")
 
 const SIZE = { width: 450, height: 400 }
 /** Switching pages: the new one rises this far (px) and sharpens from this blur, over these times (ms). */
@@ -56,6 +56,8 @@ const INTERACTIVE = "a, button, input, .clickable-icon"
 const GLASS = { tint: 0.3, alpha: 1, radius: 16 }
 /** Movement before a press becomes a drag, so clicks stay clicks. */
 const DRAG_THRESHOLD = 4
+/** A menu shown this soon (ms) after a press in the preview opens in the preview. */
+const MENU_PRESS_MS = 1000
 /**
  * The frame's edges grow into bars when the cursor comes this close to them
  * (px), and shrink back once it's this far: [opens, closes].
@@ -154,6 +156,7 @@ module.exports = class extends Plugin {
   async onload() {
     this.settings = Object.assign({}, DEFAULTS, await this.loadData())
     this.addSettingTab(new MutaSettings(this.app, this))
+    this.patchMenus()
     this.leaf = null
     this.win = null
     this.next = null
@@ -978,6 +981,52 @@ module.exports = class extends Plugin {
     return this.downloading
   }
 
+  /**
+   * Menus opened from the preview window ("More options", a right-click)
+   * open at what was clicked. Otherwise Obsidian pops its native macOS
+   * menus up over its main window, nowhere near the button.
+   * The preview never takes focus, so Obsidian doesn't know a click came
+   * from it: a press in the preview just before the menu tells.
+   */
+  patchMenus() {
+    const proto = Menu.prototype
+    if (!proto.setUseNativeMenu) return
+    const plugin = this
+    const previewDoc = () => {
+      const doc = plugin.leaf && plugin.leaf.view.containerEl.ownerDocument
+      return doc && doc !== document ? doc : null
+    }
+    const fromPreview = (event, doc) => {
+      const pip = previewDoc()
+      if (!pip) return null
+      if ((doc || (event && event.target && event.target.ownerDocument)) === pip) return pip
+      return performance.now() - plugin.previewPressAt < MENU_PRESS_MS ? pip : null
+    }
+    // Native menus (Obsidian's default on macOS) pop up over the preview window
+    // at the button (pip-main.js); otherwise the menu is drawn inside the preview.
+    const native = (menu) =>
+      menu.useNativeMenu !== undefined ? !!menu.useNativeMenu : plugin.app.vault.getConfig("nativeMenus") !== false
+    const showAtPosition = proto.showAtPosition
+    const show = (menu, position, pip) => {
+      if (native(menu) && plugin.pip) plugin.pip.menuFromPreview()
+      else menu.setUseNativeMenu(false)
+      return showAtPosition.call(menu, position, pip)
+    }
+    proto.showAtPosition = function (position, doc) {
+      const pip = fromPreview(null, doc)
+      return pip ? show(this, position, pip) : showAtPosition.apply(this, arguments)
+    }
+    const showAtMouseEvent = proto.showAtMouseEvent
+    proto.showAtMouseEvent = function (event) {
+      const pip = fromPreview(event)
+      return pip ? show(this, { x: event.clientX, y: event.clientY }, pip) : showAtMouseEvent.apply(this, arguments)
+    }
+    this.register(() => {
+      proto.showAtPosition = showAtPosition
+      proto.showAtMouseEvent = showAtMouseEvent
+    })
+  }
+
   /** A close button at the end of the top bar; the next hovered link opens the window again. */
   addCloseButton() {
     const view = this.leaf && this.leaf.view
@@ -1004,6 +1053,8 @@ module.exports = class extends Plugin {
     this.attachDrag(doc)
     this.attachSwipe(doc)
     this.attachScrollFades(doc)
+    // Which press opened a menu (patchMenus).
+    doc.addEventListener("pointerdown", () => (this.previewPressAt = performance.now()), true)
     this.attachPropertiesMorph(doc)
     this.ui = { switcher: this.buildSwitcher(doc), rail: this.buildRail(doc) }
   }

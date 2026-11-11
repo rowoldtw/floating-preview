@@ -309,6 +309,11 @@ class Pip {
 
   // ── Swiping, from pip-helper's trackpad events ────────────────────────
 
+  /** The next native menu pops up over this window (patchMenuPopup). */
+  menuFromPreview() {
+    global.__mutaMenuTarget = { windowId: this.window.id, at: Date.now() }
+  }
+
   /** Liquid Glass behind the page (glass.node's options), or none (null). */
   setGlass(options) {
     if (!this.native || !this.alive()) return
@@ -465,6 +470,7 @@ class Pip {
 exports.create = (options) => {
   if (global.__muta) global.__muta.dispose()
   global.__muta = new Pip(options)
+  patchMenuPopup()
   return global.__muta
 }
 
@@ -477,4 +483,27 @@ exports.placement = ({ bounds, tucked, size }) => {
 exports.dispose = () => {
   if (global.__muta) global.__muta.dispose()
   global.__muta = null
+}
+
+/**
+ * Obsidian's native menus pop up over its main window, wherever the click
+ * was. A menu opened from the preview (it says so just before, through
+ * menuFromPreview) pops up over the preview window instead, at the button.
+ * Patched once per Obsidian run: it only reads __mutaMenuTarget, so later
+ * versions of this file don't need to replace it.
+ */
+function patchMenuPopup() {
+  if (global.__mutaMenus) return
+  global.__mutaMenus = true
+  const { Menu } = require("electron")
+  const popup = Menu.prototype.popup
+  Menu.prototype.popup = function (options) {
+    const target = global.__mutaMenuTarget
+    global.__mutaMenuTarget = null
+    if (target && Date.now() - target.at < 1500) {
+      const win = BrowserWindow.fromId(target.windowId)
+      if (win && !win.isDestroyed()) options = { ...(options || {}), window: win }
+    }
+    return popup.call(this, options)
+  }
 }
