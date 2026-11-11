@@ -103,10 +103,8 @@ for (const rel of readdirSync(featuresDir, { recursive: true }) as string[]) {
 /** After the summary, a feature's details are only these callouts, each at most once, in this order (AGENTS.md → Features). */
 const SECTIONS = ["demo", "use", "how", "todo", "out"]
 function checkSections(path: string, body: string) {
-  const blocks = body
-    .trim()
-    .split(/\n\s*\n/)
-    .slice(1)
+  const [first, ...blocks] = body.trim().split(/\n\s*\n/)
+  if (first.includes("\n")) fail(path, "the summary is one line, then a blank line")
   let last = -1
   for (const block of blocks) {
     const type = block.match(/^> \[!(\w+)\]/)?.[1]
