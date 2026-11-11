@@ -20,7 +20,7 @@ An Obsidian plugin for macOS, plain JavaScript with no build step, plus two nati
 
 ## Builds and vaults
 
-- **Dev build:** the test vault, `~/Documents/Muta Dev`. Its `.obsidian/plugins/muta` links to this repo, and its `features/` and `ROADMAP.md` link to this repo's, so the plugin is tested on its own roadmap (Order notes: `features/Phase */Phase *.md`). After changing `pip-helper.swift` or `glass.m`, run `./scripts/install.sh "$HOME/Documents/Muta Dev"`; after JS or CSS changes, reload Obsidian.
+- **Dev build:** the test vault, `~/Documents/Muta Vault`. Its `.obsidian/plugins/muta` links to this repo, and its `features/` and `ROADMAP.md` link to this repo's, so the plugin is tested on its own roadmap (Order notes: `features/Phase */Phase *.md`). After changing `pip-helper.swift` or `glass.m`, run `./scripts/install.sh "$HOME/Documents/Muta Vault"`; after JS or CSS changes, reload Obsidian.
 - **Public build:** other vaults (the Amarula desktop repo) run the latest GitHub release, not this checkout.
 - Settings and window position live in each plugin folder's `data.json`, so every vault linked to the repo shares the repo's one.
 
