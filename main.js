@@ -189,7 +189,7 @@ module.exports = class extends Plugin {
       if (!(file instanceof TFile) || file.extension !== "md")
         return original.apply(this, arguments)
       // The note you hovered from (not links inside the preview itself) gives the switcher its order when no order notes are set.
-      const fromPreview = targetEl && targetEl.ownerDocument.body.classList.contains("fp-window")
+      const fromPreview = targetEl && targetEl.ownerDocument.body.classList.contains("muta-window")
       if (!fromPreview && sourcePath) plugin.sourcePath = sourcePath
       plugin.schedule(file, plugin.direction(targetEl))
     }
@@ -358,7 +358,7 @@ module.exports = class extends Plugin {
     const docs = new Set()
     this.app.workspace.iterateAllLeaves((leaf) => {
       const doc = leaf.view.containerEl.ownerDocument
-      if (!doc.body.classList.contains("fp-window")) docs.add(doc)
+      if (!doc.body.classList.contains("muta-window")) docs.add(doc)
     })
     docs.add(document)
     let css = ""
@@ -398,22 +398,22 @@ module.exports = class extends Plugin {
   // ── The switcher: a pill at the bottom that opens into the roadmap ────
 
   buildSwitcher(doc) {
-    const el = doc.body.createDiv({ cls: "fp-switcher" })
+    const el = doc.body.createDiv({ cls: "muta-switcher" })
     // The roadmap list pops out above the bar, over the page.
-    const popout = doc.body.createDiv({ cls: "fp-switcher-popout" })
-    const list = popout.createDiv({ cls: "fp-switcher-list" })
-    const bar = el.createDiv({ cls: "fp-switcher-bar" })
-    const prev = bar.createEl("button", { cls: "fp-switcher-step", attr: { "aria-label": "Previous feature", "data-tooltip-position": "top" } })
+    const popout = doc.body.createDiv({ cls: "muta-switcher-popout" })
+    const list = popout.createDiv({ cls: "muta-switcher-list" })
+    const bar = el.createDiv({ cls: "muta-switcher-bar" })
+    const prev = bar.createEl("button", { cls: "muta-switcher-step", attr: { "aria-label": "Previous feature", "data-tooltip-position": "top" } })
     setIcon(prev, "chevron-left")
     const title = bar.createEl("button", {
-      cls: "fp-switcher-title",
+      cls: "muta-switcher-title",
       attr: { "aria-haspopup": "listbox" },
     })
     // The text slides as you step through the roadmap; the button stays put.
-    const label = title.createSpan({ cls: "fp-switcher-label" })
-    const name = label.createSpan({ cls: "fp-switcher-name" })
-    const where = label.createSpan({ cls: "fp-switcher-where" })
-    const next = bar.createEl("button", { cls: "fp-switcher-step", attr: { "aria-label": "Next feature", "data-tooltip-position": "top" } })
+    const label = title.createSpan({ cls: "muta-switcher-label" })
+    const name = label.createSpan({ cls: "muta-switcher-name" })
+    const where = label.createSpan({ cls: "muta-switcher-where" })
+    const next = bar.createEl("button", { cls: "muta-switcher-step", attr: { "aria-label": "Next feature", "data-tooltip-position": "top" } })
     setIcon(next, "chevron-right")
     prev.addEventListener("click", () => this.step(-1))
     next.addEventListener("click", () => this.step(1))
@@ -462,10 +462,10 @@ module.exports = class extends Plugin {
       const heading = item.group
       if (heading !== group) {
         group = heading
-        list.createDiv({ cls: "fp-switcher-group", text: heading })
+        list.createDiv({ cls: "muta-switcher-group", text: heading })
       }
       const row = list.createDiv({
-        cls: "fp-switcher-item",
+        cls: "muta-switcher-item",
         text: item.file.basename,
       })
       if (item.depth) row.addClass("is-sub")
@@ -612,12 +612,12 @@ module.exports = class extends Plugin {
   // ── The rail: where you are on the page, and its sections ─────────────
 
   buildRail(doc) {
-    const el = doc.body.createDiv({ cls: "fp-rail" })
-    const track = el.createDiv({ cls: "fp-rail-track" })
-    const thumb = track.createDiv({ cls: "fp-rail-thumb" })
-    const ticks = track.createDiv({ cls: "fp-rail-ticks" })
+    const el = doc.body.createDiv({ cls: "muta-rail" })
+    const track = el.createDiv({ cls: "muta-rail-track" })
+    const thumb = track.createDiv({ cls: "muta-rail-thumb" })
+    const ticks = track.createDiv({ cls: "muta-rail-ticks" })
     // Section names pop out beside the rail, over the page, while it's hovered.
-    const labels = doc.body.createDiv({ cls: "fp-rail-labels" })
+    const labels = doc.body.createDiv({ cls: "muta-rail-labels" })
     this.hoverOpen([el, labels], "is-rail-open", () => this.updateRail())
     // Scrolling over the rail (or a section name) scrolls the page.
     for (const target of [el, labels])
@@ -712,7 +712,7 @@ module.exports = class extends Plugin {
     return (
       this.leaf &&
       this.leaf.view.containerEl.querySelector(
-        ".view-content .markdown-preview-view:not(.fp-old)"
+        ".view-content .markdown-preview-view:not(.muta-old)"
       )
     )
   }
@@ -751,10 +751,10 @@ module.exports = class extends Plugin {
       rail.ticks.empty()
       rail.labels.empty()
       rail.sections.forEach((section) => {
-        section.tick = rail.ticks.createDiv({ cls: "fp-rail-tick" })
+        section.tick = rail.ticks.createDiv({ cls: "muta-rail-tick" })
         // Marks and thumb in %, so they stay put as the rail's height follows the top bar.
         section.tick.style.top = `${(section.top / total) * 100}%`
-        section.label = rail.labels.createDiv({ cls: "fp-rail-label", text: section.name })
+        section.label = rail.labels.createDiv({ cls: "muta-rail-label", text: section.name })
         section.label.style.top = `${(section.top / total) * 100}%`
         section.label.addEventListener("click", () =>
           page.scrollTo({
@@ -803,11 +803,11 @@ module.exports = class extends Plugin {
    */
   snapshot() {
     const content = this.leaf && this.leaf.view.containerEl.querySelector(".view-content")
-    const page = content && content.querySelector(".markdown-preview-view:not(.fp-old)")
+    const page = content && content.querySelector(".markdown-preview-view:not(.muta-old)")
     if (!page || reduceMotion()) return null
-    content.querySelectorAll(".fp-old").forEach((el) => el.remove())
+    content.querySelectorAll(".muta-old").forEach((el) => el.remove())
     const copy = page.cloneNode(true)
-    copy.classList.add("fp-old")
+    copy.classList.add("muta-old")
     copy.setAttribute("aria-hidden", "true")
     content.appendChild(copy)
     copy.scrollTop = page.scrollTop
@@ -823,7 +823,7 @@ module.exports = class extends Plugin {
    */
   crossfade(old, direction = 1, axis = "y") {
     const page = this.leaf && this.leaf.view.containerEl.querySelector(
-      ".view-content .markdown-preview-view:not(.fp-old)"
+      ".view-content .markdown-preview-view:not(.muta-old)"
     )
     if (!page || reduceMotion()) {
       if (old) old.remove()
@@ -926,7 +926,7 @@ module.exports = class extends Plugin {
   /** Puts changed settings into effect on an open window. */
   applySettings() {
     const doc = this.leaf && this.leaf.view.containerEl.ownerDocument
-    if (doc && doc !== document) doc.body.style.setProperty("--fp-darkness", String(this.settings.darkness))
+    if (doc && doc !== document) doc.body.style.setProperty("--muta-darkness", String(this.settings.darkness))
     if (this.isOpen()) {
       this.win.setVisibleOnAllWorkspaces(this.settings.allSpaces, {
         visibleOnFullScreen: this.settings.allSpaces,
@@ -1069,14 +1069,14 @@ module.exports = class extends Plugin {
    */
   addCloseButton() {
     const view = this.leaf && this.leaf.view
-    if (!view || !view.addAction || view.fpClose) return
+    if (!view || !view.addAction || view.mutaClose) return
     const more = view.moreOptionsButtonEl
-    view.fpClose = view.addAction("x", "Close preview", () => this.closeWindow())
-    view.fpClose.addClass("fp-close")
-    if (view.actionsEl) view.actionsEl.appendChild(view.fpClose)
+    view.mutaClose = view.addAction("x", "Close preview", () => this.closeWindow())
+    view.mutaClose.addClass("muta-close")
+    if (view.actionsEl) view.actionsEl.appendChild(view.mutaClose)
     const left = view.headerEl && view.headerEl.querySelector(".view-header-left")
     if (more && left) {
-      more.addClass("fp-more")
+      more.addClass("muta-more")
       left.prepend(more)
     }
   }
@@ -1084,11 +1084,11 @@ module.exports = class extends Plugin {
   /** Wires up the window, once per window. */
   attach() {
     const doc = this.leaf && this.leaf.view.containerEl.ownerDocument
-    if (!doc || doc === document || doc.body.classList.contains("fp-window"))
+    if (!doc || doc === document || doc.body.classList.contains("muta-window"))
       return
-    doc.body.classList.add("fp-window")
-    doc.body.style.setProperty("--fp-darkness", String(this.settings.darkness))
-    doc.documentElement.classList.add("fp-root")
+    doc.body.classList.add("muta-window")
+    doc.body.style.setProperty("--muta-darkness", String(this.settings.darkness))
+    doc.documentElement.classList.add("muta-root")
     this.showTucked()
     // Touch-down and lift on the trackpad, from pip-main.js, for whatever needs them.
     const gestures = new Set()

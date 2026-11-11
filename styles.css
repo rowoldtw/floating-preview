@@ -5,21 +5,21 @@
  * cursor near the top, its top grows into a bar with the page's buttons
  * (and a close button), which drags the window.
  */
-html.fp-root,
-html.fp-root body.fp-window .app-container,
-html.fp-root body.fp-window .horizontal-main-container,
-html.fp-root body.fp-window .workspace,
-html.fp-root body.fp-window .workspace-split,
-html.fp-root body.fp-window .workspace-tabs,
-html.fp-root body.fp-window .workspace-tab-container,
-html.fp-root body.fp-window .workspace-leaf,
-html.fp-root body.fp-window .workspace-leaf-content,
-html.fp-root body.fp-window .markdown-preview-view,
-html.fp-root body.fp-window .markdown-reading-view,
-html.fp-root body.fp-window .mod-root {
+html.muta-root,
+html.muta-root body.muta-window .app-container,
+html.muta-root body.muta-window .horizontal-main-container,
+html.muta-root body.muta-window .workspace,
+html.muta-root body.muta-window .workspace-split,
+html.muta-root body.muta-window .workspace-tabs,
+html.muta-root body.muta-window .workspace-tab-container,
+html.muta-root body.muta-window .workspace-leaf,
+html.muta-root body.muta-window .workspace-leaf-content,
+html.muta-root body.muta-window .markdown-preview-view,
+html.muta-root body.muta-window .markdown-reading-view,
+html.muta-root body.muta-window .mod-root {
   background: transparent !important;
 }
-.fp-window {
+.muta-window {
   --pip-frame: 5px;
   --pip-bar: 38px;
   --pip-top: var(--pip-frame);
@@ -36,25 +36,25 @@ html.fp-root body.fp-window .mod-root {
   /* The window's own corners (macOS, continuous): the page's sit concentric inside them. */
   --pip-radius: 16px;
 }
-html.fp-root body.fp-window {
+html.muta-root body.muta-window {
   /* A steady dark layer over the glass: less see-through, and it hides the glass's own shifts. */
-  background: rgb(44 44 46 / var(--fp-darkness, 0.55)) !important;
+  background: rgb(44 44 46 / var(--muta-darkness, 0.55)) !important;
 }
-.fp-window.is-near-top,
-.fp-window.is-dragging {
+.muta-window.is-near-top,
+.muta-window.is-dragging {
   --pip-top: var(--pip-bar);
 }
-.fp-window:is(.is-near-bottom, .is-switcher-open) {
+.muta-window:is(.is-near-bottom, .is-switcher-open) {
   --pip-bottom: var(--pip-bottom-bar);
 }
-.fp-window.has-scroll:is(.is-near-right, .is-rail-open, .is-scrolling) {
+.muta-window.has-scroll:is(.is-near-right, .is-rail-open, .is-scrolling) {
   --pip-right: var(--pip-rail);
 }
-.fp-window .workspace-leaf-content {
+.muta-window .workspace-leaf-content {
   position: relative;
 }
 /* Properties: one panel, collapsed to its heading by default (main.js), with the page's corner radius. */
-.fp-window .metadata-container {
+.muta-window .metadata-container {
   /* Rows' hover and focus outlines sit concentric inside the panel's corners. */
   --metadata-property-radius: calc(var(--pip-radius) - var(--pip-frame) - 4px);
   --metadata-property-radius-hover: calc(var(--pip-radius) - var(--pip-frame) - 4px);
@@ -63,13 +63,13 @@ html.fp-root body.fp-window {
   border-radius: calc(var(--pip-radius) - var(--pip-frame));
   background-color: rgb(255 255 255 / 0.06) !important;
 }
-.fp-window .metadata-container .metadata-properties {
+.muta-window .metadata-container .metadata-properties {
   background-color: transparent !important;
   /* Obsidian pulls the rows out past the panel's edges; here they stay 4px inside it, so their hover sits concentric. */
   margin-inline: 0 !important;
   padding-inline: 0 !important;
 }
-.fp-window .metadata-container .metadata-properties-heading {
+.muta-window .metadata-container .metadata-properties-heading {
   display: flex !important;
   /* With the panel's 4px, the pill's text sits 10px from its top and bottom and 14px from its sides. */
   margin: 0 !important;
@@ -80,37 +80,37 @@ html.fp-root body.fp-window {
   cursor: default;
 }
 /* The theme widens the rows past the panel and shifts them left; here they stay inside it. */
-html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
+html.muta-root body.muta-window .mod-root .metadata-container .metadata-content {
   /* While morphing, held at the open panel's width (--pip-props-width, set by main.js). */
   width: var(--pip-props-width, 100%) !important;
   transform: none !important;
 }
 /* Closed, the panel is just a pill around its title. */
-.fp-window .metadata-container.is-collapsed {
+.muta-window .metadata-container.is-collapsed {
   width: fit-content;
   /* Obsidian's size container gives it no width of its own to fit. */
   container-type: normal;
 }
-.fp-window .metadata-container.is-collapsed .metadata-properties-heading {
+.muta-window .metadata-container.is-collapsed .metadata-properties-heading {
   width: max-content !important;
 }
 
 /* While the panel morphs open or closed (main.js), its rows stay drawn inside it. */
-.fp-window .metadata-container.is-morphing {
+.muta-window .metadata-container.is-morphing {
   overflow: hidden;
 }
-.fp-window .metadata-container.is-morphing {
+.muta-window .metadata-container.is-morphing {
   container: none;
 }
-.fp-window .metadata-container.is-morphing .metadata-content {
+.muta-window .metadata-container.is-morphing .metadata-content {
   display: block !important;
   /* The rows lay out by the open panel's width (held on this) while the panel itself changes size. */
   container: metadata / inline-size;
 }
-.fp-window .metadata-container.is-morphing .metadata-property {
+.muta-window .metadata-container.is-morphing .metadata-property {
   display: flex !important;
 }
-.fp-window .view-header {
+.muta-window .view-header {
   position: absolute;
   inset: 0 0 auto;
   z-index: 10;
@@ -126,29 +126,29 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
     height 220ms var(--pip-ease),
     opacity 160ms ease-out;
 }
-.fp-window.is-near-top .view-header,
-.fp-window.is-dragging .view-header {
+.muta-window.is-near-top .view-header,
+.muta-window.is-dragging .view-header {
   opacity: 1;
 }
-.fp-window .view-header {
+.muta-window .view-header {
   align-items: center;
   /* No traffic lights to clear: the corner buttons sit as far from the sides as from the top and bottom. */
   padding-inline: 6px !important;
 }
-.fp-window .view-header-left {
+.muta-window .view-header-left {
   display: flex;
   align-items: center;
   gap: 2px;
 }
 /* Compact buttons, so their hover outline sits clear of the bar's edges. */
-.fp-window .view-header .clickable-icon {
+.muta-window .view-header .clickable-icon {
   cursor: default;
   height: 26px;
   min-width: 26px;
   padding: 4px 5px !important;
   border-radius: 7px;
 }
-.fp-window .view-content {
+.muta-window .view-content {
   position: absolute !important;
   inset: var(--pip-top) var(--pip-right) var(--pip-bottom) var(--pip-frame);
   width: auto !important;
@@ -164,13 +164,13 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
     bottom 260ms var(--pip-ease);
 }
 /* The page keeps its width as the right edge grows over it, so its text never rewraps. */
-.fp-window .view-content > .markdown-reading-view,
-.fp-window .view-content > .fp-old {
+.muta-window .view-content > .markdown-reading-view,
+.muta-window .view-content > .muta-old {
   position: absolute !important;
   inset: 0 auto 0 0 !important;
   width: calc(100vw - 2 * var(--pip-frame)) !important;
 }
-.fp-window .markdown-preview-view {
+.muta-window .markdown-preview-view {
   --fade: 28px;
   /* The page fades out at its top and bottom while there's more to scroll that way. */
   -webkit-mask-image: linear-gradient(
@@ -188,37 +188,37 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
  * ::-webkit-scrollbar, so scrollbar-width is what hides them; with System
  * Settings' "Show scroll bars: Always", it also keeps them from taking width.
  */
-.fp-window .markdown-preview-view,
-.fp-switcher-list {
+.muta-window .markdown-preview-view,
+.muta-switcher-list {
   scrollbar-width: none;
 }
-.fp-window .markdown-preview-view::-webkit-scrollbar,
-.fp-switcher-list::-webkit-scrollbar {
+.muta-window .markdown-preview-view::-webkit-scrollbar,
+.muta-switcher-list::-webkit-scrollbar {
   display: none;
 }
-.fp-window .markdown-preview-view:not(.has-above) {
+.muta-window .markdown-preview-view:not(.has-above) {
   --fade-above: 0px;
 }
-.fp-window .markdown-preview-view.has-above {
+.muta-window .markdown-preview-view.has-above {
   --fade-above: var(--fade);
 }
-.fp-window .markdown-preview-view.has-below {
+.muta-window .markdown-preview-view.has-below {
   --fade-below: var(--fade);
 }
-.fp-window.is-dragging,
-.fp-window.is-dragging * {
+.muta-window.is-dragging,
+.muta-window.is-dragging * {
   cursor: grabbing !important;
   user-select: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  .fp-window .view-header,
-  .fp-window .view-content {
+  .muta-window .view-header,
+  .muta-window .view-content {
     transition: none;
   }
 }
 
 /* Tucked past a screen edge, the preview shows only a thin handle: click, drag or swipe it to bring the window back. */
-.fp-window:is(.is-tucked-left, .is-tucked-right)::after {
+.muta-window:is(.is-tucked-left, .is-tucked-right)::after {
   content: "";
   position: fixed;
   top: 0;
@@ -229,15 +229,15 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
   background: linear-gradient(var(--text-muted), var(--text-muted)) center / 3px
     32px no-repeat;
 }
-.fp-window.is-tucked-left::after {
+.muta-window.is-tucked-left::after {
   right: 0;
 }
-.fp-window.is-tucked-right::after {
+.muta-window.is-tucked-right::after {
   left: 0;
 }
 
 /* The page being switched away from, fading out over the new one (main.js). */
-.fp-window .markdown-preview-view.fp-old {
+.muta-window .markdown-preview-view.muta-old {
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -251,12 +251,12 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
  * open (the roadmap list, the section names) pops out over the page, so
  * the edges stay slim.
  */
-.fp-window:is(.is-tucked-left, .is-tucked-right)
-  :is(.fp-switcher, .fp-rail, .fp-switcher-popout, .fp-rail-labels) {
+.muta-window:is(.is-tucked-left, .is-tucked-right)
+  :is(.muta-switcher, .muta-rail, .muta-switcher-popout, .muta-rail-labels) {
   display: none;
 }
-.fp-switcher,
-.fp-rail {
+.muta-switcher,
+.muta-rail {
   position: fixed;
   z-index: 15;
   overflow: hidden;
@@ -271,14 +271,14 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
     right 240ms var(--pip-ease),
     opacity 160ms ease-out;
 }
-.fp-window:is(.is-near-bottom, .is-switcher-open) .fp-switcher,
-.fp-window.has-scroll:is(.is-near-right, .is-rail-open, .is-scrolling) .fp-rail {
+.muta-window:is(.is-near-bottom, .is-switcher-open) .muta-switcher,
+.muta-window.has-scroll:is(.is-near-right, .is-rail-open, .is-scrolling) .muta-rail {
   opacity: 1;
   pointer-events: auto;
 }
 
 /* Switcher: ‹ name n/total › in the bottom edge. */
-.fp-switcher {
+.muta-switcher {
   /* Full width even with the rail open: the rail stops short of the bottom corner. */
   left: var(--pip-frame);
   right: var(--pip-frame);
@@ -289,11 +289,11 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
   gap: 4px;
   padding: 0 8px;
 }
-.fp-switcher-bar {
+.muta-switcher-bar {
   display: contents;
 }
-.fp-switcher-step,
-.fp-switcher-title {
+.muta-switcher-step,
+.muta-switcher-title {
   height: 24px;
   padding: 0 !important;
   border-radius: 6px;
@@ -301,18 +301,18 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
   box-shadow: none !important;
   cursor: default;
 }
-.fp-switcher-step {
+.muta-switcher-step {
   flex: none;
   width: 24px;
   display: grid;
   place-items: center;
   color: var(--text-muted);
 }
-.fp-switcher-step svg {
+.muta-switcher-step svg {
   width: 13px;
   height: 13px;
 }
-.fp-switcher-title {
+.muta-switcher-title {
   flex: 0 1 auto;
   min-width: 0;
   margin-inline: auto;
@@ -324,27 +324,27 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
   gap: 6px;
   font-size: 12px;
 }
-.fp-switcher-step:hover,
-.fp-switcher-title:hover,
-.fp-window.is-switcher-open .fp-switcher-title {
+.muta-switcher-step:hover,
+.muta-switcher-title:hover,
+.muta-window.is-switcher-open .muta-switcher-title {
   background: rgb(255 255 255 / 0.09) !important;
   color: var(--text-normal);
 }
-.fp-switcher-name {
+.muta-switcher-name {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   color: var(--text-normal);
   font-weight: 500;
 }
-.fp-switcher-where {
+.muta-switcher-where {
   flex: none;
   color: var(--text-faint);
   font-variant-numeric: tabular-nums;
 }
 
 /* The roadmap list, popped out above the switcher. */
-.fp-switcher-popout {
+.muta-switcher-popout {
   position: fixed;
   z-index: 25;
   left: 50%;
@@ -366,12 +366,12 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
     opacity 140ms ease-out,
     scale 220ms var(--pip-ease);
 }
-.fp-window.is-switcher-open .fp-switcher-popout {
+.muta-window.is-switcher-open .muta-switcher-popout {
   opacity: 1;
   pointer-events: auto;
   scale: 1;
 }
-.fp-switcher-list {
+.muta-switcher-list {
   position: relative;
   flex: 1;
   min-height: 0;
@@ -379,13 +379,13 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
   padding: 4px;
   -webkit-mask-image: linear-gradient(transparent, black 10px, black calc(100% - 10px), transparent);
 }
-.fp-switcher-group {
+.muta-switcher-group {
   padding: 8px 8px 3px;
   color: var(--text-faint);
   font-size: 11px;
   font-weight: 500;
 }
-.fp-switcher-item {
+.muta-switcher-item {
   padding: 3px 8px;
   border-radius: 6px;
   color: var(--text-muted);
@@ -393,34 +393,34 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.fp-switcher-item.is-sub {
+.muta-switcher-item.is-sub {
   padding-left: 22px;
 }
-.fp-switcher-item:hover {
+.muta-switcher-item:hover {
   background: rgb(255 255 255 / 0.08);
   color: var(--text-normal);
 }
-.fp-switcher-item.is-current {
+.muta-switcher-item.is-current {
   background: color-mix(in srgb, var(--interactive-accent) 30%, transparent);
   color: var(--text-normal);
   font-weight: 500;
 }
 
 /* Rail: the page's scroll position and a mark per section in the right edge. */
-.fp-rail,
-.fp-rail-labels {
+.muta-rail,
+.muta-rail-labels {
   /* Only alongside the page's straight side, clear of its rounded corners. */
   top: calc(var(--pip-top) + var(--pip-radius) - var(--pip-frame));
   bottom: calc(var(--pip-bottom) + var(--pip-radius) - var(--pip-frame));
 }
-.fp-rail {
+.muta-rail {
   right: 0;
   width: var(--pip-right);
 }
-.fp-rail.is-hidden {
+.muta-rail.is-hidden {
   display: none;
 }
-.fp-rail-track {
+.muta-rail-track {
   /* Centred in the edge: as far from the window's side as from the page. */
   position: absolute;
   top: 0;
@@ -432,14 +432,14 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
   background: rgb(255 255 255 / 0.08);
   cursor: default;
 }
-.fp-rail-thumb {
+.muta-rail-thumb {
   position: absolute;
   left: 0;
   right: 0;
   border-radius: inherit;
   background: rgb(255 255 255 / 0.3);
 }
-.fp-rail-tick {
+.muta-rail-tick {
   position: absolute;
   left: 2px;
   right: 2px;
@@ -448,24 +448,24 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
   border-radius: 1px;
   background: rgb(255 255 255 / 0.5);
 }
-.fp-rail-tick.is-current {
+.muta-rail-tick.is-current {
   background: var(--interactive-accent);
 }
 
 /* Section names, popped out beside the rail over the page while it's hovered. */
-.fp-rail-labels {
+.muta-rail-labels {
   position: fixed;
   z-index: 25;
   right: calc(var(--pip-right) + 4px);
   width: 170px;
   pointer-events: none;
 }
-.fp-rail-label:not(.is-shown) {
+.muta-rail-label:not(.is-shown) {
   opacity: 0;
   pointer-events: none;
   translate: 6px -50%;
 }
-.fp-rail-label {
+.muta-rail-label {
   position: absolute;
   right: 0;
   max-width: 100%;
@@ -485,37 +485,37 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
     opacity 140ms ease-out,
     translate 220ms var(--pip-ease);
 }
-.fp-rail-label:hover {
+.muta-rail-label:hover {
   color: var(--text-normal);
 }
-.fp-rail-label.is-current {
+.muta-rail-label.is-current {
   color: var(--text-normal);
   font-weight: 500;
   border-color: color-mix(in srgb, var(--interactive-accent) 55%, transparent);
 }
 @media (prefers-reduced-motion: reduce) {
-  .fp-switcher,
-  .fp-rail,
-  .fp-switcher-popout,
-  .fp-rail-label {
+  .muta-switcher,
+  .muta-rail,
+  .muta-switcher-popout,
+  .muta-rail-label {
     transition: none;
   }
 }
 /* A little room under the page's end. */
-.fp-window .markdown-preview-view .markdown-preview-sizer {
+.muta-window .markdown-preview-view .markdown-preview-sizer {
   padding-bottom: 24px !important;
 }
-.fp-window .metadata-properties-heading {
+.muta-window .metadata-properties-heading {
   align-items: center;
   gap: 6px;
 }
-.fp-window .metadata-properties-heading .collapse-indicator {
+.muta-window .metadata-properties-heading .collapse-indicator {
   position: static !important;
   margin: 0 !important;
   padding: 0 !important;
 }
 
 /* The page pulls past its ends on its own compositor layer (main.js), so it stays smooth. */
-.fp-window .markdown-preview-view:not(.fp-old) .markdown-preview-sizer {
+.muta-window .markdown-preview-view:not(.muta-old) .markdown-preview-sizer {
   will-change: transform;
 }
