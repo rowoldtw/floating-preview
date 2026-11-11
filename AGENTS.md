@@ -29,7 +29,7 @@ An Obsidian plugin for macOS, plain JavaScript with no build step, plus two nati
 - Branches: work on `dev` (or a branch off it); `main` holds what's released. Before resetting a branch, save it as `backup-<name>`.
 - Never take control of the user's screen (synthetic clicks or keys, focusing windows). When something needs touching, ask the user and say exactly what to try. Passive screenshots are fine.
 - Respect macOS's Reduce motion: switch and move without animating.
-- Commits use Conventional Commits (`feat:`, `fix:`, `chore:`, …), with subjects written for users: they become the release notes.
+- Commits use Conventional Commits (`feat:`, `fix:`, `chore:`, …), with subjects written for users: `feat:` and `fix:` commits (subject and body) become the release notes, so anything users shouldn't read goes in `chore:`, `docs:` or `refactor:`.
 
 ## Releasing
 
