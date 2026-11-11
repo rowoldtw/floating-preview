@@ -886,6 +886,8 @@ module.exports = class extends Plugin {
       skipTransformProcessType: true,
     })
     win.setBackgroundColor("#00000000")
+    // No close, minimise and zoom buttons: it's closed from its own bar.
+    win.setWindowButtonVisibility(false)
     // Clicking it never makes it the focused window: glass looks different
     // on the focused window, and the preview would flip between the two.
     win.setFocusable(false)
@@ -1027,12 +1029,23 @@ module.exports = class extends Plugin {
     })
   }
 
-  /** A close button at the end of the top bar; the next hovered link opens the window again. */
+  /**
+   * A close button in the top bar's right corner (the next hovered link opens
+   * the window again), and the page's menu moved to its left corner.
+   */
   addCloseButton() {
     const view = this.leaf && this.leaf.view
     if (!view || !view.addAction || view.fpClose) return
+    // Obsidian's "More options" button is always the last action.
+    const more = view.actionsEl && view.actionsEl.lastElementChild
     view.fpClose = view.addAction("x", "Close preview", () => this.closeWindow())
     view.fpClose.addClass("fp-close")
+    view.actionsEl.appendChild(view.fpClose)
+    const left = view.headerEl && view.headerEl.querySelector(".view-header-left")
+    if (more && left) {
+      more.addClass("fp-more")
+      left.prepend(more)
+    }
   }
 
   /** Wires up the window, once per window. */

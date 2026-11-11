@@ -132,6 +132,13 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
 }
 .fp-window .view-header {
   align-items: center;
+  /* No traffic lights to clear: the corner buttons sit as far from the sides as from the top and bottom. */
+  padding-inline: 6px !important;
+}
+.fp-window .view-header-left {
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
 /* Compact buttons, so their hover outline sits clear of the bar's edges. */
 .fp-window .view-header .clickable-icon {
