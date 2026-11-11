@@ -154,7 +154,7 @@ const alive = (w) => !!(w && !w.isDestroyed())
 
 module.exports = class extends Plugin {
   async onload() {
-    this.settings = Object.assign({}, DEFAULTS, await this.loadData())
+    this.settings = Object.assign({}, DEFAULTS, (await this.loadData()) || (await this.fromFloatingPreview()))
     this.addSettingTab(new MutaSettings(this.app, this))
     this.patchMenus()
     this.leaf = null
@@ -984,6 +984,26 @@ module.exports = class extends Plugin {
       }
     })()
     return this.downloading
+  }
+
+  /**
+   * Muta was Floating Preview (plugin ID floating-preview). Its settings and
+   * window position come over the first time, and it's turned off: both
+   * would take over hover previews and open two windows.
+   */
+  async fromFloatingPreview() {
+    const old = "floating-preview"
+    let saved = null
+    try {
+      saved = JSON.parse(await this.app.vault.adapter.read(`${this.app.vault.configDir}/plugins/${old}/data.json`))
+      await this.saveData(saved)
+    } catch {}
+    const plugins = this.app.plugins
+    if (plugins && plugins.enabledPlugins && plugins.enabledPlugins.has(old)) {
+      await plugins.disablePluginAndSave(old)
+      new Notice("Floating Preview is now Muta, so it's been turned off. You can uninstall it in Community plugins.")
+    }
+    return saved
   }
 
   /**
