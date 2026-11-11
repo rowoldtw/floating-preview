@@ -31,7 +31,7 @@
  * thin rail showing where you are on the page, with a mark per section, each
  * section's name popping out beside its mark as the cursor nears it.
  */
-const { Notice, Plugin, PluginSettingTab, Setting, TFile, requestUrl, setIcon } = require("obsidian")
+const { Notice, Plugin, PluginSettingTab, SettingGroup, TFile, requestUrl, setIcon } = require("obsidian")
 
 const SIZE = { width: 450, height: 400 }
 /** Switching pages: the new one rises this far (px) and sharpens from this blur, over these times (ms). */
@@ -1415,65 +1415,84 @@ class MutaSettings extends PluginSettingTab {
     }
     containerEl.empty()
 
-    new Setting(containerEl).setName("Look").setHeading()
-    new Setting(containerEl)
-      .setName("Liquid Glass")
-      .setDesc("The desktop shows through the window, blurred (macOS 26 or later). Off, the window is a plain tint.")
-      .addToggle((t) => t.setValue(plugin.settings.glass).onChange((v) => save("glass", v)))
-    new Setting(containerEl)
-      .setName("Glass style")
-      .setDesc("Regular blurs what's behind the window; clear barely does.")
-      .addDropdown((d) =>
-        d
-          .addOptions({ regular: "Regular", clear: "Clear" })
-          .setValue(plugin.settings.glassStyle)
-          .onChange((v) => save("glassStyle", v))
+    new SettingGroup(containerEl)
+      .setHeading("Look")
+      .addSetting((s) =>
+        s
+          .setName("Liquid Glass")
+          .setDesc("The desktop shows through the window, blurred (macOS 26 or later). Off, the window is a plain tint.")
+          .addToggle((t) => t.setValue(plugin.settings.glass).onChange((v) => save("glass", v)))
       )
-    new Setting(containerEl)
-      .setName("Darkness")
-      .setDesc("How dark the window is over the glass, so the page stays readable.")
-      .addSlider((sl) =>
-        sl
-          .setLimits(0, 100, 5)
-          .setValue(Math.round(plugin.settings.darkness * 100))
-          .setDynamicTooltip()
-          .onChange((v) => save("darkness", v / 100))
+      .addSetting((s) =>
+        s
+          .setName("Glass style")
+          .setDesc("Regular blurs what's behind the window; clear barely does.")
+          .addDropdown((d) =>
+            d
+              .addOptions({ regular: "Regular", clear: "Clear" })
+              .setValue(plugin.settings.glassStyle)
+              .onChange((v) => save("glassStyle", v))
+          )
       )
-    new Setting(containerEl)
-      .setName("Mark the previewed note")
-      .setDesc("Links to the note in the window turn yellow in Obsidian's other windows and the file list.")
-      .addToggle((t) => t.setValue(plugin.settings.markPreviewed).onChange((v) => save("markPreviewed", v)))
+      .addSetting((s) =>
+        s
+          .setName("Darkness")
+          .setDesc("How dark the window is over the glass, so the page stays readable.")
+          .addSlider((sl) =>
+            sl
+              .setLimits(0, 100, 5)
+              .setValue(Math.round(plugin.settings.darkness * 100))
+              .setDynamicTooltip()
+              .onChange((v) => save("darkness", v / 100))
+          )
+      )
+      .addSetting((s) =>
+        s
+          .setName("Mark the previewed note")
+          .setDesc("Links to the note in the window turn yellow in Obsidian's other windows and the file list.")
+          .addToggle((t) => t.setValue(plugin.settings.markPreviewed).onChange((v) => save("markPreviewed", v)))
+      )
 
-    new Setting(containerEl).setName("Behaviour").setHeading()
-    new Setting(containerEl)
-      .setName("Show on every Space")
-      .setDesc("The window stays in the same place on every Space and over full-screen apps.")
-      .addToggle((t) => t.setValue(plugin.settings.allSpaces).onChange((v) => save("allSpaces", v)))
-    new Setting(containerEl)
-      .setName("Swipe to move")
-      .setDesc("Two-finger swipes on the top bar move the window, like dragging it.")
-      .addToggle((t) => t.setValue(plugin.settings.swipeToMove).onChange((v) => save("swipeToMove", v)))
-    new Setting(containerEl)
-      .setName("Overscroll")
-      .setDesc("Pages pull past their top and bottom and spring back.")
-      .addToggle((t) => t.setValue(plugin.settings.overscroll).onChange((v) => save("overscroll", v)))
-
-    new Setting(containerEl).setName("Order").setHeading()
-    new Setting(containerEl)
-      .setName("Order notes")
-      .setDesc(
-        "Notes whose lists of links set the order the bottom bar steps through, " +
-          "grouped by their headings and callouts. Glob patterns, one per line " +
-          "(like Roadmap/*.md). Empty: the links on the note you hovered from."
+    new SettingGroup(containerEl)
+      .setHeading("Behaviour")
+      .addSetting((s) =>
+        s
+          .setName("Show on every Space")
+          .setDesc("The window stays in the same place on every Space and over full-screen apps.")
+          .addToggle((t) => t.setValue(plugin.settings.allSpaces).onChange((v) => save("allSpaces", v)))
       )
-      .addTextArea((text) =>
-        text
-          .setPlaceholder("Roadmap/*.md")
-          .setValue(plugin.settings.orderNotes)
-          .onChange(async (value) => {
-            plugin.items = null
-            await save("orderNotes", value)
-          })
+      .addSetting((s) =>
+        s
+          .setName("Swipe to move")
+          .setDesc("Two-finger swipes on the top bar move the window, like dragging it.")
+          .addToggle((t) => t.setValue(plugin.settings.swipeToMove).onChange((v) => save("swipeToMove", v)))
+      )
+      .addSetting((s) =>
+        s
+          .setName("Overscroll")
+          .setDesc("Pages pull past their top and bottom and spring back.")
+          .addToggle((t) => t.setValue(plugin.settings.overscroll).onChange((v) => save("overscroll", v)))
+      )
+
+    new SettingGroup(containerEl)
+      .setHeading("Order")
+      .addSetting((s) =>
+        s
+          .setName("Order notes")
+          .setDesc(
+            "Notes whose lists of links set the order the bottom bar steps through, " +
+              "grouped by their headings and callouts. Glob patterns, one per line " +
+              "(like Roadmap/*.md). Empty: the links on the note you hovered from."
+          )
+          .addTextArea((text) =>
+            text
+              .setPlaceholder("Roadmap/*.md")
+              .setValue(plugin.settings.orderNotes)
+              .onChange(async (value) => {
+                plugin.items = null
+                await save("orderNotes", value)
+              })
+          )
       )
   }
 }

@@ -1,11 +1,13 @@
 ---
-status: planned
-priority: low
+status: done
 native: false
 area: Chrome
 ---
 
-Each settings group is joined into one card with `SettingGroup`.
+Each settings group (Look, Behaviour, Order) sits in one card, like Obsidian's own settings.
 
-> [!how] Plan
-> Prototype on `backup-dev` (f9e932d). Needs Obsidian 1.11 or later.
+> [!use] Using it
+> Settings → Muta. Each group's heading sits above its card.
+
+> [!how] How it works
+> `MutaSettings` builds each group with Obsidian's `SettingGroup` (`setHeading`, then `addSetting` per row) instead of a heading `Setting` followed by loose rows. `SettingGroup` arrived in Obsidian 1.11, so `minAppVersion` is now 1.11.0.
