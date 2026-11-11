@@ -1,0 +1,63 @@
+filters:
+  and:
+    - file.inFolder("features")
+    - file.hasProperty("status")
+    - not:
+        - file.inFolder("features/_templates")
+formulas:
+  phase: file.folder.replace("features/", "")
+properties:
+  formula.phase:
+    displayName: Phase
+  note.status:
+    displayName: Status
+  note.priority:
+    displayName: Priority
+  note.native:
+    displayName: Native
+  note.area:
+    displayName: Area
+  note.parent:
+    displayName: Part of
+  note.subfeatures:
+    displayName: Sub-features
+views:
+  - type: kanban
+    name: Phase 2
+    filters:
+      and:
+        - file.inFolder("features/Phase 2")
+    groupBy:
+      property: status
+      direction: ASC
+    groupOrder:
+      - idea
+      - planned
+      - in-progress
+      - done
+    order:
+      - file.name
+  - type: kanban
+    name: Phase 1
+    filters:
+      and:
+        - file.inFolder("features/Phase 1")
+    groupBy:
+      property: status
+      direction: ASC
+    groupOrder:
+      - idea
+      - planned
+      - in-progress
+      - done
+    order:
+      - file.name
+  - type: table
+    name: All
+    groupBy:
+      property: formula.phase
+      direction: ASC
+    order:
+      - file.name
+      - status
+      - native

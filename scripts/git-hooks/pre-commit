@@ -1,0 +1,7 @@
+#!/bin/sh
+# Regenerates ROADMAP.md and the features' synced properties (bun run roadmap),
+# and stages the files it rewrote, so a commit never leaves them stale.
+# Installed by `bun install` (package.json "prepare" sets core.hooksPath).
+files=$(bun scripts/roadmap.ts) || exit 1
+[ -z "$files" ] && exit 0
+printf '%s\n' "$files" | while IFS= read -r file; do git add -- "$file"; done

@@ -5,3 +5,6 @@ glass.node
 data.json
 .DS_Store
 natives-version
+# Obsidian, when the repo is opened as a vault
+.obsidian/
+node_modules

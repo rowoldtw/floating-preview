@@ -1,0 +1,8 @@
+{
+  "name": "muta",
+  "private": true,
+  "scripts": {
+    "roadmap": "bun scripts/roadmap.ts",
+    "prepare": "git config core.hooksPath scripts/git-hooks"
+  }
+}
