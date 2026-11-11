@@ -34,9 +34,9 @@ An Obsidian plugin for macOS, plain JavaScript with no build step, plus two nati
 ## Releasing
 
 1. Bump `version` in `manifest.json` and add it to `versions.json`.
-2. Commit, tag the commit with the same version (`git tag 1.2.0`) and push the tag.
+2. Merge `dev` into `main`, tag that commit with the same version (`git tag 0.2.0`) and push `main` and the tag.
 
-`.github/workflows/release.yml` builds the native parts for Apple Silicon and Intel, writes their SHA-256s into `main.js` (replacing the `__…_SHA256__` placeholders) and publishes the release. BRAT users get it on their next Obsidian start.
+`.github/workflows/release.yml` builds the native parts for Apple Silicon and Intel, writes their SHA-256s into `main.js` (replacing the `__…_SHA256__` placeholders) and publishes the release. Its notes are the `feat:` and `fix:` commits since the previous tag, with their bodies (`scripts/release-notes.sh <tag>` previews them). BRAT users get it on their next Obsidian start.
 
 ## Features
 

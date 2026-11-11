@@ -3,7 +3,8 @@
 # what the plugin downloads for itself (BRAT installs only those three): the
 # native parts, built for both Apple Silicon and Intel Macs, and its
 # main-process code. main.js gets their SHA-256s written in, so the plugin
-# can check what it downloads.
+# can check what it downloads. Its notes come from the feat: and fix: commits
+# since the previous tag (scripts/release-notes.sh).
 name: Release
 
 on:
@@ -18,6 +19,9 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Every commit and tag, for the release notes.
+          fetch-depth: 0
 
       - name: Check the tag matches the manifest
         run: |
@@ -48,5 +52,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          ./scripts/release-notes.sh "$GITHUB_REF_NAME" > notes.md
           gh release create "$GITHUB_REF_NAME" dist/* \
-            --title "$GITHUB_REF_NAME" --generate-notes
+            --title "$GITHUB_REF_NAME" --notes-file notes.md
