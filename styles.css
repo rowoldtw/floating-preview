@@ -181,6 +181,21 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
     transparent
   );
 }
+/*
+ * The page and the switcher's list scroll without a scrollbar: the rail
+ * stands in for the page's, and the list fades at its ends. Obsidian on
+ * macOS sets scrollbar-color on the body, which makes Chromium ignore
+ * ::-webkit-scrollbar, so scrollbar-width is what hides them; with System
+ * Settings' "Show scroll bars: Always", it also keeps them from taking width.
+ */
+.fp-window .markdown-preview-view,
+.fp-switcher-list {
+  scrollbar-width: none;
+}
+.fp-window .markdown-preview-view::-webkit-scrollbar,
+.fp-switcher-list::-webkit-scrollbar {
+  display: none;
+}
 .fp-window .markdown-preview-view:not(.has-above) {
   --fade-above: 0px;
 }
@@ -363,9 +378,6 @@ html.fp-root body.fp-window .mod-root .metadata-container .metadata-content {
   overflow-y: auto;
   padding: 4px;
   -webkit-mask-image: linear-gradient(transparent, black 10px, black calc(100% - 10px), transparent);
-}
-.fp-switcher-list::-webkit-scrollbar {
-  display: none;
 }
 .fp-switcher-group {
   padding: 8px 8px 3px;
