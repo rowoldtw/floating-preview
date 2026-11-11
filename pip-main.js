@@ -311,6 +311,7 @@ class Pip {
 
   /** The next native menu pops up over this window (patchMenuPopup). */
   menuFromPreview() {
+    if (!this.alive()) return
     global.__mutaMenuTarget = { windowId: this.window.id, at: Date.now() }
   }
 
@@ -483,27 +484,31 @@ exports.placement = ({ bounds, tucked, size }) => {
 exports.dispose = () => {
   if (global.__muta) global.__muta.dispose()
   global.__muta = null
+  global.__mutaMenuPopup = null
 }
 
 /**
  * Obsidian's native menus pop up over its main window, wherever the click
  * was. A menu opened from the preview (it says so just before, through
  * menuFromPreview) pops up over the preview window instead, at the button.
- * Patched once per Obsidian run: it only reads __mutaMenuTarget, so later
- * versions of this file don't need to replace it.
+ * Electron's Menu.popup is wrapped once per Obsidian run; the wrapper calls
+ * whatever this file last set as global.__mutaMenuPopup, so a reloaded
+ * version takes over and a disposed one (null) leaves menus alone.
  */
 function patchMenuPopup() {
+  global.__mutaMenuPopup = (options) => {
+    const target = global.__mutaMenuTarget
+    global.__mutaMenuTarget = null
+    if (!target || Date.now() - target.at > 500) return options
+    const win = BrowserWindow.fromId(target.windowId)
+    return win && !win.isDestroyed() ? { ...(options || {}), window: win } : options
+  }
   if (global.__mutaMenus) return
   global.__mutaMenus = true
   const { Menu } = require("electron")
   const popup = Menu.prototype.popup
   Menu.prototype.popup = function (options) {
-    const target = global.__mutaMenuTarget
-    global.__mutaMenuTarget = null
-    if (target && Date.now() - target.at < 1500) {
-      const win = BrowserWindow.fromId(target.windowId)
-      if (win && !win.isDestroyed()) options = { ...(options || {}), window: win }
-    }
-    return popup.call(this, options)
+    const redirect = global.__mutaMenuPopup
+    return popup.call(this, redirect ? redirect(options) : options)
   }
 }

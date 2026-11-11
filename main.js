@@ -906,7 +906,10 @@ module.exports = class extends Plugin {
         this.saveData(this.settings)
       },
     })
-    win.once("closed", () => pipMain.dispose())
+    win.once("closed", () => {
+      pipMain.dispose()
+      if (this.win === win) this.pip = null
+    })
     this.win = win
     // Keep working where you were: the new windows don't take focus.
     main.focus()
@@ -988,7 +991,9 @@ module.exports = class extends Plugin {
    * open at what was clicked. Otherwise Obsidian pops its native macOS
    * menus up over its main window, nowhere near the button.
    * The preview never takes focus, so Obsidian doesn't know a click came
-   * from it: a press in the preview just before the menu tells.
+   * from it (it passes the main window's document): when a menu doesn't
+   * say where it's from, the last press, if it was in the preview just
+   * before, tells.
    */
   patchMenus() {
     const proto = Menu.prototype
@@ -1001,9 +1006,15 @@ module.exports = class extends Plugin {
     const fromPreview = (event, doc) => {
       const pip = previewDoc()
       if (!pip) return null
-      if ((doc || (event && event.target && event.target.ownerDocument)) === pip) return pip
-      return performance.now() - plugin.previewPressAt < MENU_PRESS_MS ? pip : null
+      const from = event && event.target && event.target.ownerDocument
+      if (from) return from === pip ? pip : null
+      if (doc === pip) return pip
+      const press = plugin.lastPress
+      return press && press.doc === pip && performance.now() - press.at < MENU_PRESS_MS ? pip : null
     }
+    // Presses in the main window count too, so a menu opened there right
+    // after a press in the preview stays there.
+    this.registerDomEvent(document, "pointerdown", () => (this.lastPress = { doc: document, at: performance.now() }), true)
     // Native menus (Obsidian's default on macOS) pop up over the preview window
     // at the button (pip-main.js); otherwise the menu is drawn inside the preview.
     const native = (menu) =>
@@ -1014,18 +1025,21 @@ module.exports = class extends Plugin {
       else menu.setUseNativeMenu(false)
       return showAtPosition.call(menu, position, pip)
     }
-    proto.showAtPosition = function (position, doc) {
+    const atPosition = function (position, doc) {
       const pip = fromPreview(null, doc)
       return pip ? show(this, position, pip) : showAtPosition.apply(this, arguments)
     }
     const showAtMouseEvent = proto.showAtMouseEvent
-    proto.showAtMouseEvent = function (event) {
+    const atMouseEvent = function (event) {
       const pip = fromPreview(event)
       return pip ? show(this, { x: event.clientX, y: event.clientY }, pip) : showAtMouseEvent.apply(this, arguments)
     }
+    proto.showAtPosition = atPosition
+    proto.showAtMouseEvent = atMouseEvent
+    // Put back only if nothing else has wrapped them since.
     this.register(() => {
-      proto.showAtPosition = showAtPosition
-      proto.showAtMouseEvent = showAtMouseEvent
+      if (proto.showAtPosition === atPosition) proto.showAtPosition = showAtPosition
+      if (proto.showAtMouseEvent === atMouseEvent) proto.showAtMouseEvent = showAtMouseEvent
     })
   }
 
@@ -1036,11 +1050,10 @@ module.exports = class extends Plugin {
   addCloseButton() {
     const view = this.leaf && this.leaf.view
     if (!view || !view.addAction || view.fpClose) return
-    // Obsidian's "More options" button is always the last action.
-    const more = view.actionsEl && view.actionsEl.lastElementChild
+    const more = view.moreOptionsButtonEl
     view.fpClose = view.addAction("x", "Close preview", () => this.closeWindow())
     view.fpClose.addClass("fp-close")
-    view.actionsEl.appendChild(view.fpClose)
+    if (view.actionsEl) view.actionsEl.appendChild(view.fpClose)
     const left = view.headerEl && view.headerEl.querySelector(".view-header-left")
     if (more && left) {
       more.addClass("fp-more")
@@ -1067,7 +1080,7 @@ module.exports = class extends Plugin {
     this.attachSwipe(doc)
     this.attachScrollFades(doc)
     // Which press opened a menu (patchMenus).
-    doc.addEventListener("pointerdown", () => (this.previewPressAt = performance.now()), true)
+    doc.addEventListener("pointerdown", () => (this.lastPress = { doc, at: performance.now() }), true)
     this.attachPropertiesMorph(doc)
     this.ui = { switcher: this.buildSwitcher(doc), rail: this.buildRail(doc) }
   }
